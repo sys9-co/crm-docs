@@ -11,8 +11,8 @@ description: SDLC QA loop integrated with Plane project management for the SYS9 
 |-------|-------|
 | URL | `https://plane.sys9.co` |
 | Workspace | `sys9` |
-| Project | `42274dc1-be6c-474d-9883-a7fe72feef44` |
-| Issue URL | `https://plane.sys9.co/sys9/projects/42274dc1-be6c-474d-9883-a7fe72feef44/issues/` |
+| Project | `your-project-uuid` |
+| Issue URL | `https://plane.sys9.co/sys9/projects/{project_id}/issues/` |
 
 ## State IDs
 
@@ -35,7 +35,7 @@ description: SDLC QA loop integrated with Plane project management for the SYS9 
 
 | Name | Email | UUID |
 |------|-------|------|
-| satit(Noi) | satit@nopadol.com | `93b18c70-1537-41be-b9b7-81f22e0f1c9c` |
+| satit(Noi) | assignee@email.com | `your-assignee-uuid` |
 
 ## Cycles
 
@@ -233,7 +233,7 @@ $json = @'
 [System.IO.File]::WriteAllText($jsonPath, $json, (New-Object System.Text.UTF8Encoding $false))
 $issueId = "issue-uuid"
 $apiKey = "plane_api_xxxxx"
-$apiUrl = "https://plane.sys9.co/api/v1/workspaces/sys9/projects/42274dc1-be6c-474d-9883-a7fe72feef44/work-items/$issueId/"
+$apiUrl = "https://plane.sys9.co/api/v1/workspaces/sys9/projects/{project_id}/work-items/$issueId/"
 curl.exe -s -X PATCH -H "X-API-Key: $apiKey" -H "Content-Type: application/json" --data-binary "@$jsonPath" $apiUrl
 ```
 
@@ -263,11 +263,11 @@ Sale Plan v2 มี complete Plane integration:
 ### Cards Structure
 | Card | ID | Status | Description |
 |------|----|---------|-----------| 
-| Main Feature | f8f4bc30-2881-4b03-bc30-62b402cb662a | In Progress | Excel-style table implementation |
-| Frontend | ac30c979-f8fd-4b43-bc76-cd1e986efacf | Done | Vue 3 components completed |
-| Backend API | 727b3477-7444-433e-8a2c-9f20d971eb31 | Todo | 5 endpoints specification ready |
-| UI/UX | 8f78e3e8-cefd-4221-b371-0142781dfe89 | Done | Responsive design completed |
-| Testing | bb4b6092-3299-4d79-b04a-2fed61c863df | Todo | E2E tests awaiting real API |
+| Main Feature | your-card-uuid | In Progress | Excel-style table implementation |
+| Frontend | your-card-uuid | Done | Vue 3 components completed |
+| Backend API | your-card-uuid | Todo | 5 endpoints specification ready |
+| UI/UX | your-card-uuid | Done | Responsive design completed |
+| Testing | your-card-uuid | Todo | E2E tests awaiting real API |
 
 ### Integration Scripts
 - `create-sale-plan-v2-cards.js` - Auto-create project cards

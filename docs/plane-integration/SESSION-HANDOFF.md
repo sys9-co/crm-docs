@@ -38,8 +38,8 @@ description: Session handoff prompt for Plane QA integration. Copy this to infor
 ```
 URL: https://plane.sys9.co
 Workspace: sys9
-Project: 42274dc1-be6c-474d-9883-a7fe72feef44 (CRM)
-Assignee: satit (93b18c70-1537-41be-b9b7-81f22e0f1c9c)
+Project: your-project-uuid (CRM)
+Assignee: satit (your-assignee-uuid)
 API Key: your-plane-api-key (ใน ui/.env)
 
 States: 
@@ -93,7 +93,7 @@ PLANE_API_KEY= npx playwright test
 ## Sale Plan v2 Project Integration
 
 Sale Plan v2 มี Plane cards พร้อมแล้ว:
-- Main Feature Card: f8f4bc30-2881-4b03-bc30-62b402cb662a (In Progress)
+- Main Feature Card: your-card-uuid (In Progress)
 - 4 Sub-tasks: Frontend (Done), Backend API (Todo), UI/UX (Done), Testing (Todo)
 - ทุก cards assigned ให้ satit และมี complete documentation
 

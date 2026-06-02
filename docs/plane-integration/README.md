@@ -17,9 +17,9 @@ SYS9 CRM uses [Plane](https://plane.sys9.co) for project management. The QA syst
 |-------|-------|
 | Plane URL | `https://plane.sys9.co` |
 | Workspace | `sys9` |
-| Project | `42274dc1-be6c-474d-9883-a7fe72feef44` (CRM) |
+| Project | `your-project-uuid` (CRM) |
 | Assignee | satit |
-| Issue URL | `https://plane.sys9.co/sys9/projects/42274dc1-be6c-474d-9883-a7fe72feef44/issues/` |
+| Issue URL | `https://plane.sys9.co/sys9/projects/{project_id}/issues/` |
 
 ## Key Scripts (in main CRM repo `ui/scripts/`)
 
