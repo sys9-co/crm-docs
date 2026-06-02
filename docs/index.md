@@ -26,6 +26,25 @@ Complete specification package ready for development:
 
 ---
 
+## 🎯 Dashboard v2 - KPI Command Center
+
+Complete specification package for development:
+
+### **📡 Critical for Backend:**
+- **[API Specification](dashboard-v2/02-API-SPECIFICATION.html)** - 6 endpoints implementation
+- **[Database Schema](dashboard-v2/04-DATABASE-SCHEMA.html)** - Tables and indexes
+- **[Business Logic](dashboard-v2/05-BUSINESS-LOGIC.html)** - KPI calculations and trend detection
+
+### **🤝 Coordination:**
+- **[Integration Guide](dashboard-v2/06-INTEGRATION-GUIDE.html)** - Step-by-step workflow
+- **[Project Overview](dashboard-v2/01-PROJECT-OVERVIEW.html)** - Background context
+
+### **📋 Reference:**
+- **[UI Mockups](dashboard-v2/03-UI-MOCKUPS.html)** - Frontend design
+- **[Test Specification](dashboard-v2/07-TEST-SPECIFICATION.html)** - Testing strategy
+
+---
+
 ## 🔄 Plane Project Management
 
 Automated QA-to-Plane issue tracking system:
