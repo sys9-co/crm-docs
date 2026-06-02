@@ -26,6 +26,16 @@ Complete specification package ready for development:
 
 ---
 
+## 🔄 Plane Project Management
+
+Automated QA-to-Plane issue tracking system:
+
+- **[SDLC QA + Plane Integration](plane-integration/SDLC-QA-PLANE.html)** - Full integration spec with state transitions, dedup, and workflow
+- **[Session Handoff](plane-integration/SESSION-HANDOFF.html)** - QA system setup and configuration
+- **[Plane Overview](plane-integration/README.html)** - Quick reference, card list, and scripts
+
+---
+
 ## 🚀 Quick Implementation Guide
 
 ### **Step 1: Database Setup**
