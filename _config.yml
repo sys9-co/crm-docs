@@ -1,0 +1,46 @@
+# GitHub Pages Configuration for SYS9 CRM Documentation
+theme: jekyll-theme-cayman
+title: "SYS9 CRM Documentation"
+description: "Complete specification package for Sale Plan v2 backend implementation"
+
+# Site settings
+show_downloads: true
+google_analytics: # Add tracking ID if needed
+
+# Navigation and plugins
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+
+# Markdown processing
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Relative links
+relative_links:
+  enabled: true
+  collections: true
+
+# Include patterns
+include:
+  - README.md
+  - "*.md"
+  - "**/*.md"
+
+# Exclude patterns  
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - node_modules
+  - package.json
+  - package-lock.json
+
+# Collections (if needed later)
+collections:
+  specifications:
+    output: true
+    permalink: /:collection/:name/

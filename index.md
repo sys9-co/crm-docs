@@ -1,0 +1,58 @@
+---
+layout: default
+title: SYS9 CRM Documentation
+---
+
+# SYS9 CRM Documentation
+
+📋 **Official documentation for backend implementation**
+
+## 🎯 Sale Plan v2 - Excel-style Table
+
+Complete specification package ready for development:
+
+### **📡 Critical for Backend:**
+- **[API Specification](sale-plan-v2/02-API-SPECIFICATION.html)** - 5 endpoints implementation
+- **[Database Schema](sale-plan-v2/04-DATABASE-SCHEMA.html)** - Tables and indexes  
+- **[Business Logic](sale-plan-v2/05-BUSINESS-LOGIC.html)** - Validation rules
+
+### **🤝 Coordination:**
+- **[Integration Guide](sale-plan-v2/06-INTEGRATION-GUIDE.html)** - Step-by-step workflow
+- **[Project Overview](sale-plan-v2/01-PROJECT-OVERVIEW.html)** - Background context
+
+### **📋 Reference:**
+- **[UI Mockups](sale-plan-v2/03-UI-MOCKUPS.html)** - Frontend design
+- **[Test Specification](sale-plan-v2/07-TEST-SPECIFICATION.html)** - Testing strategy
+
+---
+
+## 🚀 Quick Implementation Guide
+
+### **Step 1: Database Setup**
+```sql
+-- Implement tables from Database Schema
+CREATE TABLE saleplan_v2_headers (...);
+CREATE TABLE saleplan_v2_entries (...);
+```
+
+### **Step 2: API Development**
+```
+GET  /crm/v2/projects/{id}/saleplan-v2     -- Load matrix
+POST /crm/v2/projects/{id}/saleplan-v2     -- Save matrix
+...
+```
+
+### **Step 3: Business Logic**
+```
+Matrix validation, Thai date formatting, calculation rules
+```
+
+---
+
+## 📊 Current Status
+
+- **Frontend**: ✅ Complete prototype
+- **Backend**: ⏳ Ready for implementation  
+- **Live Demo**: [localhost:3031](http://localhost:3031/projects/123/edit?tab=plan-v2)
+
+**🎯 Ready to code!**
