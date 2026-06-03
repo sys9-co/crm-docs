@@ -457,6 +457,70 @@ INSERT INTO activity_feed (activity_type, title, description, project_id, team_i
 ('revenue_recorded', 'บันทึกรายได้: 150,000 ฿', 'บันทึกรายได้จากลูกค้า ห้างทองแจ๊คพ็อต', 3148, 4, 301, '2026-06-15T16:45:00+07:00');
 ```
 
+### **Budget Proportion Query**
+
+The budget proportion is a live aggregation query — no separate table needed:
+
+```sql
+-- Budget proportion for all teams (or filtered by team_id)
+SELECT
+  SUM(p.budget) AS total_project_amount,
+  COALESCE(SUM(b.total_amount), 0) AS total_boq_amount,
+  COALESCE(SUM(sp.total_amount), 0) AS total_saleplan_amount
+FROM projects p
+LEFT JOIN (
+  SELECT project_id, SUM(total_amount) AS total_amount
+  FROM boq
+  WHERE deleted_at IS NULL
+  GROUP BY project_id
+) b ON b.project_id = p.id
+LEFT JOIN (
+  SELECT project_id, SUM(total_amount) AS total_amount
+  FROM sale_plans
+  WHERE deleted_at IS NULL
+  GROUP BY project_id
+) sp ON sp.project_id = p.id
+WHERE p.deleted_at IS NULL
+  AND p.status IN ('active', 'in_progress')
+  -- optional: AND p.team_id = :team_id
+```
+
+**Per-team breakdown**:
+```sql
+SELECT
+  t.id AS team_id,
+  t.name AS team_name,
+  COALESCE(SUM(p.budget), 0) AS project_amount,
+  COALESCE(SUM(b.total_amount), 0) AS boq_amount,
+  COALESCE(SUM(sp.total_amount), 0) AS saleplan_amount
+FROM teams t
+LEFT JOIN projects p ON p.team_id = t.id AND p.deleted_at IS NULL AND p.status IN ('active', 'in_progress')
+LEFT JOIN (
+  SELECT project_id, SUM(total_amount) AS total_amount
+  FROM boq
+  WHERE deleted_at IS NULL
+  GROUP BY project_id
+) b ON b.project_id = p.id
+LEFT JOIN (
+  SELECT project_id, SUM(total_amount) AS total_amount
+  FROM sale_plans
+  WHERE deleted_at IS NULL
+  GROUP BY project_id
+) sp ON sp.project_id = p.id
+WHERE t.deleted_at IS NULL
+  AND t.is_active = true
+  -- optional: AND t.id = :team_id
+GROUP BY t.id, t.name
+ORDER BY t.name
+```
+
+**Index Recommendations**:
+```sql
+CREATE INDEX idx_projects_budget_lookup ON projects(team_id, status, budget) WHERE deleted_at IS NULL;
+CREATE INDEX idx_boq_project_sum ON boq(project_id, total_amount) WHERE deleted_at IS NULL;
+CREATE INDEX idx_saleplan_project_sum ON sale_plans(project_id, total_amount) WHERE deleted_at IS NULL;
+```
+
 ## 🚀 Performance Considerations
 
 ### **Optimization Strategies:**

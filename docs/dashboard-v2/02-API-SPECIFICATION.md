@@ -544,6 +544,81 @@ Content-Type: application/json
 }
 ```
 
+---
+
+### **7. Get Budget Proportion**
+```http
+GET /crm/v2/dashboard/budget-proportion
+```
+
+**Description**: Load proportion comparison of Project Amount, BOQ Amount, and Sale Plan Amount
+
+**Query Parameters**:
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `team_id` | int | No | All teams | Filter by specific team |
+
+**Headers**:
+```http
+Authorization: Bearer {accessToken}
+X-Merchant-UID: {merchantUUID}
+Content-Type: application/json
+```
+
+**Response Success (200)**:
+```json
+{
+  "status": true,
+  "message": "Budget proportion loaded successfully",
+  "data": {
+    "total_project_amount": 21000000.00,
+    "total_boq_amount": 14200000.00,
+    "total_saleplan_amount": 10550000.00,
+    "by_team": [
+      {
+        "team_id": 1,
+        "team_name": "ปลีก(สนญ)",
+        "project_amount": 5000000.00,
+        "boq_amount": 3200000.00,
+        "saleplan_amount": 2200000.00
+      },
+      {
+        "team_id": 2,
+        "team_name": "ปลีก(สันกำแพง)",
+        "project_amount": 3500000.00,
+        "boq_amount": 2100000.00,
+        "saleplan_amount": 1400000.00
+      },
+      {
+        "team_id": 3,
+        "team_name": "โครงการ(งานขนาดใหญ่)",
+        "project_amount": 8000000.00,
+        "boq_amount": 6400000.00,
+        "saleplan_amount": 5600000.00
+      },
+      {
+        "team_id": 4,
+        "team_name": "ส่งร้านค้า(ค้าช่วง)",
+        "project_amount": 4500000.00,
+        "boq_amount": 2500000.00,
+        "saleplan_amount": 1350000.00
+      }
+    ]
+  }
+}
+```
+
+**Response Error (400)**:
+```json
+{
+  "status": false,
+  "message": "Team not found",
+  "error_code": "TEAM_NOT_FOUND"
+}
+```
+
+---
+
 ## 📋 Data Models
 
 ### **KPIMetrics Type**
@@ -659,6 +734,24 @@ interface AppointmentItem {
 }
 ```
 
+### **BudgetProportion Type**
+```typescript
+interface BudgetProportion {
+  total_project_amount: number     // Total project budget across all/filtered teams
+  total_boq_amount: number         // Total BOQ amount across all/filtered teams
+  total_saleplan_amount: number    // Total Sale Plan amount across all/filtered teams
+  by_team: TeamBudgetProportion[]  // Breakdown per team
+}
+
+interface TeamBudgetProportion {
+  team_id: number
+  team_name: string
+  project_amount: number           // This team's total project budget
+  boq_amount: number               // This team's total BOQ amount
+  saleplan_amount: number          // This team's total Sale Plan amount
+}
+```
+
 ### **TeamPerformance Type**
 ```typescript
 interface TeamPerformance {
@@ -742,6 +835,7 @@ Accept: application/json
 - Recent activity: Cache for 1 minute (real-time feed)
 - Today appointments: Cache for 30 seconds (near real-time)
 - Team performance: Cache for 5 minutes
+- Budget proportion: Cache for 15 minutes (stable financial data)
 
 ### **Pagination**:
 - Activity feed: 20 items default, max 50

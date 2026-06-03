@@ -478,6 +478,47 @@ function aggregateMonthly(rawData: Datapoint[]): Datapoint[] {
    - Zero values are valid (no data yet)
    - Missing targets default to zero achievement
 
+### **7. Budget Proportion Logic**
+
+#### **7.1 Data Sources**
+- **Project Amount**: Sum of `project.budget` for active projects within the team(s) filter
+- **BOQ Amount**: Sum of `boq.total_amount` from BOQ records linked to active projects
+- **Sale Plan Amount**: Sum of `saleplan.total_amount` from sale plans linked to active projects
+
+#### **7.2 Calculation Rules**
+
+```
+BOQ % of Project = (total_boq_amount / total_project_amount) × 100
+Sale Plan % of Project = (total_saleplan_amount / total_project_amount) × 100
+Sale Plan / BOQ Ratio = (total_saleplan_amount / total_boq_amount) × 100
+```
+
+- Project Amount is always the 100% baseline
+- If Project Amount = 0, all percentages = N/A (division by zero guard)
+- BOQ Amount should normally be ≤ Project Amount (if > 100%, flag as warning)
+- Sale Plan Amount should normally be ≤ BOQ Amount (logical: plan ≤ estimation)
+
+#### **7.3 Team Breakdown**
+Each team's amounts are independently calculated:
+- Team amounts are subsets of total (sum of all teams = total)
+- Team percentages use that team's project amount as denominator
+- This allows per-team comparison: which teams have the best BOQ-to-project ratio
+
+#### **7.4 Interpretation Guide**
+
+| Ratio | Meaning | Action |
+|-------|---------|--------|
+| BOQ > 80% of Project | Good estimation coverage | Normal tracking |
+| BOQ 50-80% | Partial BOQ coverage | May need more BOQ items |
+| BOQ < 50% | Low BOQ coverage | Review project scoping |
+| Sale Plan > 80% of BOQ | Aggressive target | Monitor feasibility |
+| Sale Plan 50-80% of BOQ | Normal target range | Standard tracking |
+| Sale Plan < 50% of BOQ | Conservative target | May need sales push |
+
+#### **7.5 Filters**
+- `team_id` filter: recalculates totals for only that team's projects
+- No date filter (financial data is current snapshot, not time-series)
+
 ### **Edge Cases:**
 
 1. **Empty Team**: Show "ไม่มีข้อมูล" with zero values, no trend
