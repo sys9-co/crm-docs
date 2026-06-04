@@ -1,98 +1,426 @@
 # Customer Insights — API Specification
 
-## 📡 API Overview
+## Endpoints Overview
 
-**Base URL**: `/crm/{api_version}`  
-**Module**: `crm`  
-**Authentication**: Bearer token + X-Merchant-UID header  
-**Response Format**: All responses follow `APIResponse<T>` wrapper
+**Base URL**: `/crm/v2`
+**Module**: `crm`
+**Authentication**: Bearer token + X-Merchant-UID header
 
-### Standard Headers
+Common headers:
 ```http
 Authorization: Bearer {accessToken}
 X-Merchant-UID: {merchantUUID}
 Content-Type: application/json
-Accept: application/json
 ```
 
-### Standard Response Patterns
-
-**Success (200)**:
+Response envelope:
 ```json
 {
   "status": true,
-  "message": "ดำเนินการสำเร็จ",
-  "data": { }
+  "message": "success",
+  "data": {}
 }
 ```
 
-**Error (4xx/5xx)**:
-```json
-{
-  "status": false,
-  "message": "Human-readable Thai error message",
-  "error_code": "MACHINE_READABLE_CODE",
-  "data": { }
-}
-```
+---
 
-**Paginated Response**:
+## 1. Customer Profile
+
+### GET /crm/v2/customers/{uuid}
+
+**Description**: Get customer profile detail for 360° view
+
+**Response 200**:
 ```json
 {
   "status": true,
-  "message": "โหลดข้อมูลสำเร็จ",
   "data": {
-    "items": [],
-    "total": 100,
-    "page": 1,
-    "size": 20,
-    "has_more": true
+    "uuid": "c7a2b3d4-...",
+    "customer_code": "C001",
+    "first_name": "สมชาย",
+    "last_name": "ใจดี",
+    "phone": "081-234-5678",
+    "email": "somchai@email.com",
+    "customer_type": "individual",
+    "customer_tier": "gold",
+    "customer_status": "active",
+    "tags": ["สมาชิกเก่า", "เครดิตดี"],
+    "avatar_url": "https://cdn.example.com/avatars/c7a2b3d4.jpg",
+    "health_score": 85,
+    "payment_behavior": "good",
+    "on_time_payment_pct": 88,
+    "avg_overdue_days": 5,
+    "total_invoices": 120,
+    "overdue_invoices": 8,
+    "as_of_date": "2026-06-01",
+    "days_since_last_order": 20
   }
 }
 ```
 
 ---
 
-## 🔑 Core Endpoints
+## 2. Update Customer Profile
 
-### **1. GET /customers — Customer List & Search**
+### PUT /crm/v2/customers/{uuid}
 
-```http
-GET /crm/v1/customers?search=ก่อสร้าง&page=1&size=20&sort_by=name&sort_order=asc&province=กรุงเทพมหานคร&last_visit_from=2026-01-01&last_visit_to=2026-06-01
+**Description**: Update customer profile fields (partial update)
+
+**Request body**:
+```json
+{
+  "first_name": "สมชาย",
+  "last_name": "ใจดี",
+  "phone": "081-234-5678",
+  "email": "somchai@email.com",
+  "customer_type": "individual",
+  "customer_tier": "gold",
+  "customer_status": "active",
+  "tags": ["สมาชิกเก่า", "เครดิตดี"],
+  "avatar_base64": "/9j/4AAQSkZJRg..."
+}
 ```
 
-**Query Parameters**:
+**Response 200**: Updated customer object (same shape as GET)
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `search` | string | No | — | Full-text search on name, code, phone, email |
-| `page` | integer | No | 1 | Page number (1-indexed) |
-| `size` | integer | No | 20 | Items per page (max 100) |
-| `sort_by` | string | No | `name` | Sort field: `name`, `last_interacted`, `project_count`, `contact_count` |
-| `sort_order` | string | No | `asc` | Sort direction: `asc`, `desc` |
-| `province` | string | No | — | Filter by province |
-| `district` | string | No | — | Filter by district |
-| `last_visit_from` | string (date) | No | — | Filter by last visit date >= (ISO 8601 date) |
-| `last_visit_to` | string (date) | No | — | Filter by last visit date <= (ISO 8601 date) |
+---
 
-**Response Success (200)**:
+## 3. Customer Overview / Metrics
+
+### GET /crm/v2/customers/{uuid}/overview
+
+**Description**: Get aggregated metrics for the 360° dashboard header
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `months` | int | 12 | Lookback period in months |
+
+**Response 200**:
 ```json
 {
   "status": true,
-  "message": "ค้นหาลูกค้าสำเร็จ",
+  "data": {
+    "total_purchase_amount": 5830000,
+    "purchase_count": 24,
+    "avg_order_value": 242916,
+    "last_purchase_date": "2026-05-15",
+    "last_purchase_days": 20,
+    "total_quotations": 12,
+    "pending_quotations": 3,
+    "total_projects": 2,
+    "active_projects": 1
+  }
+}
+```
+
+---
+
+## 4. Customer Timeline
+
+### GET /crm/v2/customers/{uuid}/timeline
+
+**Description**: Get chronological timeline of all customer interactions
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `months` | int | 3 | Lookback period |
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page |
+| `event_type` | string | — | Filter by event type (comma-separated for multiple) |
+
+**Event types**: `appointment`, `visit`, `quotation`, `sale_plan`, `project_update`, `contact`, `note`
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": "evt-001",
+      "event_type": "appointment",
+      "title": "นัดดูงาน",
+      "description": "นัดดูโครงการตัวอย่าง",
+      "event_date": "2026-05-20T10:00:00Z",
+      "created_at": "2026-05-19T14:30:00Z",
+      "related_type": "quotation",
+      "related_id": "Q2026-001",
+      "created_by": {
+        "id": 1,
+        "name": "พนักงาน ขาย"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 5. Customer Quotations
+
+### GET /crm/v2/customers/{uuid}/quotations
+
+**Description**: Get customer quotations list
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page |
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": "Q2026-001",
+      "quotation_date": "2026-05-01",
+      "total_amount": 250000,
+      "status": "approved",
+      "description": "ค่าวัสดุก่อสร้าง โครงการบ้าน ABC",
+      "expire_date": "2026-06-01"
+    }
+  ]
+}
+```
+
+---
+
+## 6. Customer Sale Plans
+
+### GET /crm/v2/customers/{uuid}/sale-plans
+
+**Description**: Get customer sale plans list
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page |
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": "SP2026-001",
+      "title": "แผนขาย โครงการบ้าน ABC",
+      "total_amount": 5000000,
+      "status": "active",
+      "start_date": "2026-05-01",
+      "end_date": "2026-08-31",
+      "progress_pct": 45
+    }
+  ]
+}
+```
+
+---
+
+## 7. Customer Orders
+
+### GET /crm/v2/customers/{uuid}/orders
+
+**Description**: Get customer orders list
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page |
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": "ORD2026-001",
+      "order_date": "2026-04-15",
+      "total_amount": 1200000,
+      "status": "delivered",
+      "payment_status": "paid",
+      "items_count": 5
+    }
+  ]
+}
+```
+
+---
+
+## 8. Customer Credit Info
+
+### GET /crm/v2/customers/{uuid}/credit
+
+**Description**: Get customer credit information
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": {
+    "credit_limit": 5000000,
+    "credit_used": 1200000,
+    "credit_remaining": 3800000,
+    "credit_utilization_pct": 24,
+    "on_time_payment_pct": 88,
+    "avg_overdue_days": 5,
+    "total_invoices": 120,
+    "overdue_invoices": 8,
+    "payment_behavior": "good",
+    "as_of_date": "2026-06-01"
+  }
+}
+```
+
+---
+
+## 9. Add Customer Note
+
+### POST /crm/v2/customers/{uuid}/notes
+
+**Description**: Add a quick note to customer timeline
+
+**Request body**:
+```json
+{
+  "content": "ลูกค้าสนใจโครงการบ้านตัวอย่าง"
+}
+```
+
+**Response 201**:
+```json
+{
+  "status": true,
+  "data": {
+    "id": "note-uuid",
+    "content": "ลูกค้าสนใจโครงการบ้านตัวอย่าง",
+    "created_at": "2026-06-04T10:00:00Z"
+  }
+}
+```
+
+---
+
+## 10. Purchase Trend
+
+### GET /crm/v2/customers/{uuid}/purchase-trend
+
+**Description**: Get monthly purchase amounts for trend chart
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `months` | int | 12 | Number of months to return |
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": [
+    { "month": "2025-07", "amount": 320000 },
+    { "month": "2025-08", "amount": 450000 },
+    { "month": "2025-09", "amount": 380000 },
+    { "month": "2025-10", "amount": 520000 },
+    { "month": "2025-11", "amount": 410000 },
+    { "month": "2025-12", "amount": 600000 },
+    { "month": "2026-01", "amount": 480000 },
+    { "month": "2026-02", "amount": 560000 },
+    { "month": "2026-03", "amount": 620000 },
+    { "month": "2026-04", "amount": 440000 },
+    { "month": "2026-05", "amount": 580000 },
+    { "month": "2026-06", "amount": 500000 }
+  ]
+}
+```
+
+---
+
+## 11. Top Products
+
+### GET /crm/v2/customers/{uuid}/top-products
+
+**Description**: Get top N products by total purchase amount
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `limit` | int | 5 | Number of products to return |
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": [
+    { "product_name": "ปูนซีเมนต์ปอร์ตแลนด์ ประเภท 1", "quantity": 2500, "total_amount": 4250000 },
+    { "product_name": "เหล็กเส้นข้ออ้อย SD40 ขนาด 16 มม.", "quantity": 850, "total_amount": 2380000 },
+    { "product_name": "เหล็กเส้นกลม SR24 ขนาด 12 มม.", "quantity": 600, "total_amount": 1440000 },
+    { "product_name": "กระเบื้องเซรามิก ขนาด 60x60 ซม.", "quantity": 3200, "total_amount": 960000 },
+    { "product_name": "ทรายหยาบ", "quantity": 180, "total_amount": 720000 }
+  ]
+}
+```
+
+---
+
+## 12. Payment Behavior
+
+### GET /crm/v2/customers/{uuid}/payment-behavior
+
+**Description**: Get customer payment behavior summary
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `months` | int | 12 | Lookback period for invoice data |
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": {
+    "on_time_payment_pct": 85,
+    "avg_overdue_days": 8,
+    "total_invoices": 48,
+    "overdue_invoices": 7
+  }
+}
+```
+
+---
+
+## 13. Customer Data (Search)
+
+### GET /crm/v2/customers/data
+
+**Description**: Search customers by keyword
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `search` | string | — | Search keyword (name, code, phone) |
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page |
+
+**Response 200**:
+```json
+{
+  "status": true,
   "data": {
     "items": [
       {
-        "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-        "customer_code": "CUST-001",
-        "customer_name": "หจก.ก่อสร้างเจริญกิจ",
+        "uuid": "c7a2b3d4-...",
+        "customer_code": "C001",
+        "first_name": "สมชาย",
+        "last_name": "ใจดี",
         "phone": "081-234-5678",
-        "email": "info@charoenkit.com",
-        "province": "กรุงเทพมหานคร",
-        "avatar_url": "https://cdn.example.com/avatars/a1b2c3d4.jpg",
-        "last_interaction_date": "2026-05-20T14:30:00Z",
-        "project_count": 8,
-        "contact_count": 5
+        "customer_type": "individual",
+        "customer_tier": "gold",
+        "avatar_url": "https://cdn.example.com/avatars/c7a2b3d4.jpg",
+        "last_interaction_date": "2026-05-15"
       }
     ],
     "total": 1,
@@ -103,1097 +431,266 @@ GET /crm/v1/customers?search=ก่อสร้าง&page=1&size=20&sort_by=nam
 }
 ```
 
-**Error Codes**: `VALIDATION_ERROR`, `UNAUTHORIZED`, `FORBIDDEN`
+---
+
+## 14. List Customers (Filtered)
+
+### GET /crm/v2/customers
+
+**Description**: List customers with filters for list page
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `search` | string | — | Search keyword |
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page |
+| `customer_type` | string | — | Filter: individual, juristic |
+| `customer_tier` | string | — | Filter: regular, silver, gold, platinum |
+| `customer_status` | string | — | Filter: active, inactive, sleeping, blacklist |
+| `province` | string | — | Filter by province name |
+| `sort_by` | string | `updated_at` | Sort field |
+| `sort_order` | string | `desc` | asc or desc |
+| `date_from` | string | — | Start date (YYYY-MM-DD) |
+| `date_to` | string | — | End date (YYYY-MM-DD) |
+| `tag` | string | — | Filter by tag |
+
+**Response 200**: Same shape as `/customers/data` with pagination
 
 ---
 
-### **2. GET /customers/{customer_uuid} — Customer Detail**
+## 15. Customer Documents
 
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890
-```
+### GET /crm/v2/customers/{uuid}/documents
 
-**Path Parameters**:
+**Description**: Get list of uploaded documents for a customer
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `customer_uuid` | string (UUID) | Primary UUID of the customer |
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page |
 
-**Response Success (200)**:
+**Response 200**:
 ```json
 {
   "status": true,
-  "message": "โหลดข้อมูลลูกค้าสำเร็จ",
-  "data": {
-    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "customer_code": "CUST-001",
-    "customer_name": "หจก.ก่อสร้างเจริญกิจ",
-    "customer_type": "contractor",
-    "phone": "081-234-5678",
-    "email": "info@charoenkit.com",
-    "tax_id": "1234567890123",
-    "address_line1": "123 ถ.สุขุมวิท",
-    "subdistrict": "คลองเตย",
-    "district": "คลองเตย",
-    "province": "กรุงเทพมหานคร",
-    "postal_code": "10110",
-    "avatar_url": "https://cdn.example.com/avatars/a1b2c3d4.jpg",
-    "profile_image": "https://cdn.example.com/profiles/a1b2c3d4.jpg",
-    "birth_date": "1989-03-15",
-    "age": 37,
-    "occupation": "รับเหมาก่อสร้าง",
-    "contact_person": "นายสมชาย ใจดี",
-    "contact_phone": "089-876-5432",
-    "social_media": {
-      "facebook": "facebook.com/charoenkit",
-      "line": "@charoenkit_off",
-      "instagram": "@charoenkit_construction",
-      "tiktok": "@charoenkit_tiktok",
-      "website": "https://charoenkit.com"
-    },
-    "last_interacted": "2026-05-20T14:30:00Z",
-    "total_projects": 8,
-    "total_quotations": 5,
-    "total_sale_plans": 12,
-    "total_orders": 4,
-    "total_contacts": 3,
-    "total_visits": 62,
-    "active_status": 1,
-    "created_at": "2024-01-15T08:30:00Z",
-    "updated_at": "2026-05-20T14:30:00Z"
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND` (404), `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **3. PUT /customers/{customer_uuid} — Update Customer**
-
-```http
-PUT /crm/v2/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890
-Content-Type: application/json
-```
-
-**Request Body**:
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `customer_name` | string | No | ชื่อลูกค้า |
-| `phone` | string | No | เบอร์โทรศัพท์ |
-| `email` | string | No | อีเมล |
-| `customer_type` | string | No | ประเภทลูกค้า (`contractor`, `supplier`, `developer`, `retailer`, `sub_contractor`, `architect`, `other`) |
-| `tier` | string | No | ระดับ (`A`, `B`, `C`) |
-| `customer_status` | string | No | สถานะ (`active`, `dormant`, `churned`) |
-| `tags` | string[] | No | แท็ก (array of strings) |
-| `credit_term` | number | No | เครดิตเทอม (วัน) |
-| `credit_limit` | number | No | วงเงินเครดิต |
-| `address_line1` | string | No | ที่อยู่ |
-| `province` | string | No | จังหวัด |
-| `district` | string | No | เขต/อำเภอ |
-| `subdistrict` | string | No | แขวง/ตำบล |
-| `postal_code` | string | No | รหัสไปรษณีย์ |
-
-**Example Request**:
-```json
-{
-  "customer_name": "หจก.ก่อสร้างเจริญกิจ (แก้ไข)",
-  "phone": "081-234-5678",
-  "email": "info@charoenkit.com",
-  "customer_type": "contractor",
-  "tier": "A",
-  "customer_status": "active",
-  "tags": ["VIP", "ประจำ"],
-  "credit_term": 30,
-  "credit_limit": 1000000.00,
-  "province": "กรุงเทพมหานคร",
-  "district": "คลองเตย"
-}
-```
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "บันทึกข้อมูลลูกค้าสำเร็จ",
-  "data": {
-    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "customer_name": "หจก.ก่อสร้างเจริญกิจ (แก้ไข)",
-    "updated_at": "2026-06-04T14:30:00Z"
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND` (404), `VALIDATION_ERROR` (422), `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **4. GET /customers/{customer_uuid}/credit — Credit Info**
-
-```http
-GET /crm/v2/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/credit
-```
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดข้อมูลเครดิตสำเร็จ",
-  "data": {
-    "credit_limit": 1000000.00,
-    "credit_used": 450000.00,
-    "credit_available": 550000.00,
-    "credit_term": 30,
-    "payment_due_days": 15,
-    "overdue_amount": 0.00,
-    "last_payment_date": "2026-05-15",
-    "last_payment_amount": 150000.00
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND` (404), `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **5. POST /customers/{customer_uuid}/notes — Add Note**
-
-```http
-POST /crm/v2/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/notes
-Content-Type: application/json
-```
-
-**Request Body**:
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `content` | string | Yes | เนื้อหาโน๊ต |
-
-**Example Request**:
-```json
-{
-  "content": "ลูกค้าสนใจสินค้ากลุ่มเหล็กโครงสร้าง"
-}
-```
-
-**Response Success (201)**:
-```json
-{
-  "status": true,
-  "message": "เพิ่มโน๊ตสำเร็จ",
-  "data": {
-    "id": 101,
-    "customer_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "content": "ลูกค้าสนใจสินค้ากลุ่มเหล็กโครงสร้าง",
-    "created_by": "พนักงาน ขายดี",
-    "created_at": "2026-06-04T14:30:00Z"
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND` (404), `VALIDATION_ERROR` (422), `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **6. GET /customers/{customer_uuid}/overview — Customer Metrics Overview**
-
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/overview
-```
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดข้อมูลภาพรวมสำเร็จ",
-  "data": {
-    "total_contacts": 5,
-    "total_projects": 8,
-    "total_appointments": 24,
-    "total_visits": 62,
-    "total_quotation_value": 5800000.00,
-    "total_sale_plan_value": 12500000.00,
-    "total_boq_value": 8500000.00,
-    "last_interaction_date": "2026-05-20T14:30:00Z"
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND` (404), `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-## 🔗 Related Entity Endpoints
-
-### **7. GET /customers/{customer_uuid}/timeline — Activity Timeline**
-
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/timeline?page=1&size=20
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `page` | integer | No | 1 | Page number |
-| `size` | integer | No | 20 | Items per page (max 50) |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดไทม์ไลน์สำเร็จ",
-  "data": {
-    "items": [
-      {
-        "id": "evt-001",
-        "event_type": "visit",
-        "title": "เข้าเยี่ยมลูกค้าที่โครงการ พูดคุยความคืบหน้า",
-        "description": "รายละเอียดเพิ่มเติมสำหรับการเข้าเยี่ยม",
-        "timestamp": "2026-05-20T09:00:00Z",
-        "actor_name": "สมชาย ใจดี",
-        "reference_type": "visit",
-        "reference_uuid": "visit-001",
-        "reference_url": "/visits/visit-001"
-      },
-      {
-        "id": "evt-002",
-        "event_type": "quotation",
-        "title": "ออกใบเสนอราคาเลขที่ QT-2026-001",
-        "description": "งานปรับปรุงโครงการบ้านกลางเมือง",
-        "timestamp": "2026-05-15T11:30:00Z",
-        "actor_name": "วิไล รักดี",
-        "reference_type": "quotation",
-        "reference_uuid": "qt-001",
-        "reference_url": "/quotations/qt-001"
-      },
-      {
-        "id": "evt-003",
-        "event_type": "appointment",
-        "title": "นัดหมายเพื่อเสนอราคางานปรับปรุง",
-        "description": "",
-        "timestamp": "2026-05-10T14:00:00Z",
-        "actor_name": "ประเสริฐ มั่งคั่ง",
-        "reference_type": null,
-        "reference_uuid": null,
-        "reference_url": null
-      }
-    ],
-    "total": 45,
-    "page": 1,
-    "size": 20,
-    "has_more": true
-  }
-}
-```
-
-**Event Types**: `appointment`, `visit`, `project_update`, `quotation`, `sale_plan`, `contact`, `note`
-
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **8. GET /customers/{customer_uuid}/quotations — Quotations**
-
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/quotations?page=1&size=20&status=เสนอราคา
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `page` | integer | No | 1 | Page number |
-| `size` | integer | No | 20 | Items per page (max 100) |
-| `status` | string | No | — | Filter by status name (e.g., `เสนอราคา`, `อนุมัติ`) |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดข้อมูลใบเสนอราคาสำเร็จ",
-  "data": {
-    "items": [
-      {
-        "uuid": "qt-001",
-        "quotation_no": "QT-2026-001",
-        "quotation_date": "2026-05-15",
-        "project_name": "โครงการบ้านกลางเมือง",
-        "total_amount": 2500000.00,
-        "status_name": "เสนอราคา",
-        "sale_name": "สมชาย ใจดี"
-      }
-    ],
-    "total": 5,
-    "page": 1,
-    "size": 20,
-    "has_more": false
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **9. GET /customers/{customer_uuid}/sale-plans — Sale Plans**
-
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/sale-plans?page=1&size=20&status=active
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `page` | integer | No | 1 | Page number |
-| `size` | integer | No | 20 | Items per page (max 100) |
-| `status` | string | No | — | Filter by status |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดข้อมูลแผนขายสำเร็จ",
-  "data": {
-    "items": [
-      {
-        "id": 1,
-        "project_name": "โครงการบ้านกลางเมือง",
-        "period_month": "2026-05",
-        "total_amount": 1500000.00,
-        "line_count": 8,
-        "note": "งานโครงสร้างหลัก"
-      }
-    ],
-    "total": 12,
-    "page": 1,
-    "size": 20,
-    "has_more": false
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **10. GET /customers/{customer_uuid}/orders — Customer Orders / BOQ**
-
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/orders?page=1&size=20&status=ดำเนินการ
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `page` | integer | No | 1 | Page number |
-| `size` | integer | No | 20 | Items per page (max 100) |
-| `status` | string | No | — | Filter by status (e.g., `ดำเนินการ`, `แล้วเสร็จ`) |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดข้อมูลคำสั่งซื้อสำเร็จ",
-  "data": {
-    "items": [
-      {
-        "id": 1,
-        "project_name": "โครงการบ้านกลางเมือง",
-        "boq_name": "งานคอนกรีต",
-        "quantity": 100,
-        "unit_price": 350.00,
-        "total": 35000.00,
-        "date": "2026-05-10",
-        "status": "ดำเนินการ"
-      }
-    ],
-    "total": 4,
-    "page": 1,
-    "size": 20,
-    "has_more": false
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **11. GET /customers/{customer_uuid}/projects — Customer Projects**
-
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/projects
-```
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดข้อมูลโครงการสำเร็จ",
   "data": [
     {
-      "id": 101,
-      "name": "โครงการบ้านกลางเมือง",
-      "code": "PRJ-001",
-      "status": "กำลังดำเนินการ"
-    },
-    {
-      "id": 102,
-      "name": "ร้านทรัพย์ทวีวัสดุ",
-      "code": "PRJ-002",
-      "status": "แล้วเสร็จ"
+      "id": "doc-uuid-001",
+      "filename": "ใบเสนอราคา.pdf",
+      "file_type": "application/pdf",
+      "file_size": 245760,
+      "document_type": "quotation",
+      "description": "ใบเสนอราคางานโครงสร้าง",
+      "uploaded_at": "2026-06-04T10:30:00Z",
+      "uploaded_by": "พนักงาน ขาย",
+      "url": "https://cdn.example.com/documents/doc-uuid-001.pdf"
     }
   ]
 }
 ```
 
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
+### POST /crm/v2/customers/{uuid}/documents
 
----
+**Description**: Upload a new document for a customer
 
-### **12. GET /customers/{customer_uuid}/contacts — Customer Contacts**
-
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/contacts
+**Request body**:
+```json
+{
+  "filename": "ใบเสนอราคา.pdf",
+  "file_type": "application/pdf",
+  "file_size": 245760,
+  "document_type": "quotation",
+  "description": "ใบเสนอราคางานโครงสร้าง",
+  "content_base64": "JVBERi0xLjQK...",
+  "content_type": "file"
+}
 ```
 
-**Response Success (200)**:
+**Field details**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `filename` | string | Yes | Original filename with extension |
+| `file_type` | string | Yes | MIME type |
+| `file_size` | number | Yes | File size in bytes (max 20MB) |
+| `document_type` | string | Yes | Document category: quotation, invoice, contract, delivery_note, other |
+| `description` | string | No | Optional description |
+| `content_base64` | string | Yes | Base64-encoded file content |
+| `content_type` | string | No | Source: `file`, `camera`, `clipboard` |
+
+**Accepted MIME types**: `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `application/vnd.ms-excel`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `image/jpeg`, `image/png`, `image/webp`, `image/gif`
+
+**Response 201**:
 ```json
 {
   "status": true,
-  "message": "โหลดข้อมูลผู้ติดต่อสำเร็จ",
+  "data": {
+    "id": "doc-uuid-001",
+    "filename": "ใบเสนอราคา.pdf",
+    "file_size": 245760,
+    "uploaded_at": "2026-06-04T10:30:00Z"
+  }
+}
+```
+
+### DELETE /crm/v2/customers/{uuid}/documents/{id}
+
+**Description**: Delete a customer document
+
+**Response 204**: No content
+
+---
+
+## 16. Customer Addresses
+
+### GET /crm/v2/customers/{uuid}/addresses
+
+**Description**: Get list of customer addresses
+
+**Response 200**:
+```json
+{
+  "status": true,
   "data": [
     {
-      "id": 1,
-      "contact_name": "นายสมชาย ใจดี",
-      "phone": "089-876-5432",
-      "email": "somchai@charoenkit.com",
-      "position": "ผู้จัดการโครงการ",
+      "uuid": "addr-uuid-001",
+      "type": "head_office",
+      "label": "หัวมุมถนนสุขุมวิท",
+      "address_line1": "123/45 ถนนสุขุมวิท",
+      "subdistrict": "คลองเตย",
+      "district": "คลองเตย",
+      "province": "กรุงเทพมหานคร",
+      "postal_code": "10110",
       "is_primary": true
-    },
-    {
-      "id": 2,
-      "contact_name": "นางสาววิไล รักดี",
-      "phone": "088-765-4321",
-      "email": "wilai@charoenkit.com",
-      "position": "เจ้าหน้าที่จัดซื้อ",
-      "is_primary": false
     }
   ]
 }
 ```
 
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
+**Address types**: `head_office` (สำนักงานใหญ่), `project_site` (หน้างาน), `warehouse` (คลังสินค้า), `billing` (ที่ออกใบแจ้งหนี้), `other` (อื่นๆ)
 
----
+### POST /crm/v2/customers/{uuid}/addresses
 
-### **13. GET /customers/{customer_uuid}/visits — Customer Visits**
+**Description**: Add a new address for a customer
 
-```http
-GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/visits?page=1&size=10
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `page` | integer | No | 1 | Page number |
-| `size` | integer | No | 10 | Items per page (max 50) |
-
-**Response Success (200)**:
+**Request body**:
 ```json
 {
-  "status": true,
-  "message": "โหลดข้อมูลการเข้าเยี่ยมสำเร็จ",
-  "data": {
-    "items": [
-      {
-        "id": "visit-001",
-        "title": "เข้าเยี่ยมลูกค้าที่โครงการ",
-        "description": "พูดคุยความคืบหน้าโครงการบ้านกลางเมือง ตรวจสอบงานและนัดหมายครั้งต่อไป",
-        "date": "2026-05-20T09:00:00Z",
-        "visitor_name": "สมชาย ใจดี"
-      }
-    ],
-    "total": 62,
-    "page": 1,
-    "size": 10,
-    "has_more": true
-  }
+  "type": "head_office",
+  "label": "หัวมุมถนนสุขุมวิท",
+  "address_line1": "123/45 ถนนสุขุมวิท",
+  "subdistrict": "คลองเตย",
+  "district": "คลองเตย",
+  "province": "กรุงเทพมหานคร",
+  "postal_code": "10110",
+  "is_primary": true
 }
 ```
 
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
+**Response 201**: Created address object (same shape as GET item)
+
+### PUT /crm/v2/customers/{uuid}/addresses/{id}
+
+**Description**: Update an existing address
+
+**Request body**: Same shape as POST (partial update supported)
+
+**Response 200**: Updated address object
+
+### DELETE /crm/v2/customers/{uuid}/addresses/{id}
+
+**Description**: Delete a customer address
+
+**Response 204**: No content
+
+### PUT /crm/v2/customers/{uuid}/addresses/{id}/primary
+
+**Description**: Set an address as the primary address (unsets primary on others)
+
+**Response 200**: Updated address object
 
 ---
 
-## 📊 Analytics Endpoints
-
-### **14. GET /customers/analytics — Dashboard Analytics**
-
-```http
-GET /crm/v1/customers/analytics?sleeping_threshold_days=365
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `sleeping_threshold_days` | integer | No | 365 | Days without activity to consider a customer "sleeping" |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดข้อมูลวิเคราะห์สำเร็จ",
-  "data": {
-    "total_customers": 520,
-    "active_customers": 380,
-    "inactive_customers": 140,
-    "new_customers_this_month": 12,
-    "customers_by_province": [
-      { "province": "กรุงเทพมหานคร", "count": 180 },
-      { "province": "เชียงใหม่", "count": 65 },
-      { "province": "นนทบุรี", "count": 48 },
-      { "province": "สมุทรปราการ", "count": 42 },
-      { "province": "ชลบุรี", "count": 38 }
-    ],
-    "customers_by_district": [
-      { "district": "คลองเตย", "count": 45 },
-      { "district": "บางกะปิ", "count": 38 },
-      { "district": "เมืองเชียงใหม่", "count": 35 },
-      { "district": "บางใหญ่", "count": 28 },
-      { "district": "ศรีราชา", "count": 22 }
-    ],
-    "new_customers_over_time": [
-      { "month": "2026-01", "count": 8 },
-      { "month": "2026-02", "count": 12 },
-      { "month": "2026-03", "count": 15 },
-      { "month": "2026-04", "count": 10 },
-      { "month": "2026-05", "count": 14 },
-      { "month": "2026-06", "count": 6 }
-    ],
-    "top_customers_by_value": [
-      {
-        "customer": {
-          "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-          "customer_code": "CUST-001",
-          "customer_name": "หจก.ก่อสร้างเจริญกิจ",
-          "phone": "081-234-5678",
-          "email": "info@charoenkit.com",
-          "province": "กรุงเทพมหานคร",
-          "avatar_url": "https://cdn.example.com/avatars/a1b2c3d4.jpg",
-          "last_interaction_date": "2026-05-20T14:30:00Z",
-          "project_count": 8,
-          "contact_count": 5
-        },
-        "total_value": 18500000.00
-      }
-    ],
-    "customers_by_project_count": [
-      { "range": "1-2 โครงการ", "count": 240 },
-      { "range": "3-5 โครงการ", "count": 150 },
-      { "range": "6-10 โครงการ", "count": 80 },
-      { "range": "11+ โครงการ", "count": 50 }
-    ],
-    "acquisition_trend": [
-      { "month": "2026-01", "cumulative": 420 },
-      { "month": "2026-02", "cumulative": 432 },
-      { "month": "2026-03", "cumulative": 447 },
-      { "month": "2026-04", "cumulative": 457 },
-      { "month": "2026-05", "cumulative": 471 },
-      { "month": "2026-06", "cumulative": 477 }
-    ]
-  }
-}
-```
-
-**Error Codes**: `UNAUTHORIZED`, `FORBIDDEN`, `INTERNAL_ERROR`
-
----
-
-### **15. GET /customers/sleeping — Sleeping Customers**
-
-```http
-GET /crm/v1/customers/sleeping?threshold_days=365&page=1&size=20
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `threshold_days` | integer | No | 365 | Days without any interaction |
-| `page` | integer | No | 1 | Page number |
-| `size` | integer | No | 20 | Items per page (max 100) |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดข้อมูลลูกค้าที่ไม่ได้ติดต่อสำเร็จ",
-  "data": {
-    "items": [
-      {
-        "uuid": "uuid-sleep-001",
-        "customer_name": "ร้านทองสุขการค้า",
-        "customer_code": "CUST-010",
-        "phone": "089-123-4567",
-        "last_interaction_date": "2025-03-15T10:00:00Z",
-        "days_since_last_interaction": 446,
-        "total_visits": 8,
-        "total_projects": 2
-      }
-    ],
-    "total": 45,
-    "page": 1,
-    "size": 20,
-    "has_more": true
-  }
-}
-```
-
-**Error Codes**: `UNAUTHORIZED`, `FORBIDDEN`, `INTERNAL_ERROR`
-
----
-
-### **16. GET /customers/{customer_uuid}/purchase-trend — Purchase Trend**
-
-```http
-GET /crm/v2/customers/{customer_uuid}/purchase-trend?months=12
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `months` | integer | No | 12 | Number of months to return |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดแนวโน้มการซื้อสำเร็จ",
-  "data": [
-    { "month": "2025-07", "amount": 320000 },
-    { "month": "2025-08", "amount": 450000 }
-  ]
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **17. GET /customers/{customer_uuid}/top-products — Top Products**
-
-```http
-GET /crm/v2/customers/{customer_uuid}/top-products?limit=5
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `limit` | integer | No | 5 | Number of top products to return |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดสินค้าขายดีสำเร็จ",
-  "data": [
-    { "product_name": "ปูนซีเมนต์ปอร์ตแลนด์ ประเภท 1", "quantity": 2500, "total_amount": 4250000 }
-  ]
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-### **18. GET /customers/{customer_uuid}/payment-behavior — Payment Behavior**
-
-```http
-GET /crm/v2/customers/{customer_uuid}/payment-behavior?months=12
-```
-
-**Query Parameters**:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `months` | integer | No | 12 | Lookback period for invoice data |
-
-**Response Success (200)**:
-```json
-{
-  "status": true,
-  "message": "โหลดพฤติกรรมการชำระเงินสำเร็จ",
-  "data": {
-    "on_time_payment_pct": 85,
-    "avg_overdue_days": 8,
-    "total_invoices": 48,
-    "overdue_invoices": 7
-  }
-}
-```
-
-**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
-
----
-
-## 📋 Data Models
-
-### **APIResponse\<T\>**
-```typescript
-interface APIResponse<T = any> {
-  status: boolean        // true = success, false = error
-  message: string        // Human-readable Thai message
-  data?: T               // Response payload (absent on error)
-  error_code?: string    // Machine-readable error code
-}
-```
-
-### **PaginatedResponse\<T\>**
-```typescript
-interface PaginatedResponse<T> {
-  items: T[]             // Array of items for this page
-  total: number          // Total number of items across all pages
-  page: number           // Current page number (1-indexed)
-  size: number           // Items per page
-  has_more: boolean      // Whether more pages exist
-}
-```
-
-### **Customer**
-```typescript
-interface Customer {
-  uuid: string                    // Primary UUID v4
-  customer_code: string           // Human-readable code (e.g., "CUST-001")
-  customer_name: string           // Full customer name
-  customer_type?: string          // Type (e.g., "contractor", "retail", "developer")
-  tier?: 'A' | 'B' | 'C'         // Customer tier/level
-  customer_status?: 'active' | 'dormant' | 'churned'  // Current status
-  tags?: string[]                 // Tags (e.g., ["VIP", "ประจำ"])
-  phone?: string
-  email?: string
-  tax_id?: string                 // Thai Tax ID (13 digits)
-  address_line1?: string
-  subdistrict?: string            // ตำบล
-  district?: string               // อำเภอ
-  province?: string               // จังหวัด
-  postal_code?: string
-  avatar_url?: string
-  profile_image?: string
-  birth_date?: string             // ISO 8601 date
-  age?: number
-  occupation?: string
-  contact_person?: string         // Primary contact name (denormalized)
-  contact_phone?: string          // Primary contact phone (denormalized)
-  social_media?: {
-    facebook?: string
-    line?: string
-    instagram?: string
-    tiktok?: string
-    website?: string
-  }
-  credit_term?: number            // เครดิตเทอม (วัน)
-  credit_limit?: number           // วงเงินเครดิต
-  health_score?: number           // 0–100 health score
-  last_interacted?: string        // ISO 8601 datetime of last interaction across all types
-  total_projects?: number         // Aggregated count
-  total_quotations?: number       // Aggregated count
-  total_sale_plans?: number       // Aggregated count
-  total_orders?: number           // Aggregated count
-  total_contacts?: number         // Aggregated count
-  total_visits?: number           // Aggregated count
-  active_status?: number          // 1 = active, 0 = inactive
-  created_at?: string             // ISO 8601 datetime
-  updated_at?: string             // ISO 8601 datetime
-}
-```
-
-### **CustomerCreditInfo**
-```typescript
-interface CustomerCreditInfo {
-  credit_limit: number            // วงเงินเครดิต
-  credit_used: number             // เครดิตที่ใช้ไป
-  credit_available: number        // เครดิตคงเหลือ
-  credit_term: number             // เครดิตเทอม (วัน)
-  payment_due_days: number        // วันที่เหลือก่อนกำหนดชำระ
-  overdue_amount: number          // ยอดค้างชำระ
-  last_payment_date?: string      // วันที่ชำระล่าสุด (ISO 8601 date)
-  last_payment_amount?: number    // ยอดที่ชำระล่าสุด
-}
-```
-
-### **CustomerNote**
-```typescript
-interface CustomerNote {
-  id: number                      // Note ID
-  customer_uuid: string           // Associated customer UUID
-  content: string                 // Note content
-  created_by: string              // Creator name
-  created_at: string              // ISO 8601 datetime
-}
-```
-
-### **HealthScoreWeights**
-```typescript
-interface HealthScoreWeights {
-  recency: number                 // Weight for days since last interaction (default: 40)
-  frequency: number               // Weight for interaction frequency (default: 30)
-  monetary: number                // Weight for total value (default: 20)
-  credit: number                  // Weight for credit health (default: 10)
-}
-```
-
-### **CustomerShort (Search Result Item)**
-```typescript
-interface CustomerShort {
-  uuid: string
-  customer_code: string
-  customer_name: string
-  phone?: string
-  email?: string
-  province?: string
-  avatar_url?: string
-  last_interaction_date?: string  // ISO 8601 datetime
-  project_count?: number
-  contact_count?: number
-}
-```
-
-### **CustomerOverview**
-```typescript
-interface CustomerOverview {
-  total_contacts: number           // Total contact persons
-  total_projects: number           // Total linked projects
-  total_appointments: number       // Total appointments
-  total_visits: number            // Total site visits
-  total_quotation_value: number   // Sum of all quotation amounts
-  total_sale_plan_value: number   // Sum of all sale plan amounts
-  total_boq_value: number         // Sum of all BOQ/order amounts
-  last_interaction_date?: string  // ISO 8601 datetime
-}
-```
-
-### **TimelineEntry**
-```typescript
-interface TimelineEntry {
-  id: string                      // Unique event ID
-  event_type: 'appointment' | 'visit' | 'project_update' | 'quotation' | 'sale_plan' | 'contact' | 'note'
-  title: string                   // Event title in Thai
-  description?: string            // Optional detailed description
-  timestamp: string               // ISO 8601 datetime
-  actor_name?: string             // Person who performed/created the event
-  reference_type?: string         // Entity type this event references
-  reference_uuid?: string         // UUID of the referenced entity
-  reference_url?: string           // Frontend URL path to the referenced entity
-}
-```
-
-### **CustomerQuotation**
-```typescript
-interface CustomerQuotation {
-  uuid: string
-  quotation_no: string            // Document number (e.g., "QT-2026-001")
-  quotation_date: string          // ISO 8601 date
-  project_name?: string
-  total_amount: number
-  status_name?: string            // e.g., "เสนอราคา", "อนุมัติ", "ปิดกิจการ"
-  sale_name?: string              // Salesperson name
-}
-```
-
-### **CustomerSalePlan**
-```typescript
-interface CustomerSalePlan {
-  id: number
-  project_name: string
-  period_month: string            // "YYYY-MM" format
-  total_amount: number
-  line_count: number              // Number of BOQ lines in this plan
-  note?: string
-}
-```
-
-### **CustomerOrder**
-```typescript
-interface CustomerOrder {
-  id: number
-  project_name: string
-  boq_name?: string
-  quantity: number
-  unit_price: number
-  total: number
-  date: string                    // ISO 8601 date
-  status?: string                 // e.g., "ดำเนินการ", "แล้วเสร็จ"
-}
-```
-
-### **CustomerProject**
-```typescript
-interface CustomerProject {
-  id: number
-  name: string
-  code: string                    // Project code (e.g., "PRJ-001")
-  status?: string                 // e.g., "กำลังดำเนินการ", "แล้วเสร็จ"
-}
-```
-
-### **CustomerContact**
-```typescript
-interface CustomerContact {
-  id: number
-  contact_name: string            // Full name
-  phone?: string
-  email?: string
-  position?: string               // Job position / role
-  is_primary?: boolean            // Whether this is the primary contact
-}
-```
-
-### **CustomerVisit**
-```typescript
-interface CustomerVisit {
-  id: string
-  title: string
-  description?: string
-  date: string                    // ISO 8601 datetime
-  visitor_name?: string           // Person who made the visit
-}
-```
-
-### **CustomerAnalytics**
-```typescript
-interface CustomerAnalytics {
-  total_customers: number
-  active_customers: number
-  inactive_customers: number
-  new_customers_this_month: number
-  customers_by_province: Array<{ province: string; count: number }>
-  customers_by_district: Array<{ district: string; count: number }>
-  new_customers_over_time: Array<{ month: string; count: number }>
-  top_customers_by_value: Array<{
-    customer: CustomerShort
-    total_value: number
-  }>
-  customers_by_project_count: Array<{ range: string; count: number }>
-  acquisition_trend: Array<{ month: string; cumulative: number }>
-}
-```
-
-### **SleepingCustomer**
-```typescript
-interface SleepingCustomer {
-  uuid: string
-  customer_name: string
-  customer_code: string
-  phone?: string
-  last_interaction_date: string   // ISO 8601 datetime
-  days_since_last_interaction: number
-  total_visits: number
-  total_projects: number
-}
-```
-
-### **CustomerPurchaseTrend**
-```typescript
-interface CustomerPurchaseTrend {
-  month: string                    // "YYYY-MM" format
-  amount: number                   // Total purchase amount for the month
-}
-```
-
-### **CustomerTopProduct**
-```typescript
-interface CustomerTopProduct {
-  product_name: string              // Product name in Thai
-  quantity: number                  // Units purchased
-  total_amount: number              // Total purchase amount
-}
-```
-
-### **CustomerPaymentBehavior**
-```typescript
-interface CustomerPaymentBehavior {
-  on_time_payment_pct: number      // Percentage 0–100
-  avg_overdue_days: number         // Average days overdue
-  total_invoices: number           // Total invoices in period
-  overdue_invoices: number         // Number of overdue invoices
-}
-```
-
----
-
-## ⚠️ Error Codes
-
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `UNAUTHORIZED` | 401 | Invalid or missing authentication |
-| `FORBIDDEN` | 403 | Insufficient permissions |
-| `CUSTOMER_NOT_FOUND` | 404 | Customer UUID does not exist |
-| `VALIDATION_ERROR` | 422 | Request parameter validation failed |
-| `INTERNAL_ERROR` | 500 | Unexpected server error |
-
----
-
-## 🔄 Business Logic Notes
-
-### Aggregated Fields (not stored — computed at query time)
-- `total_projects` — COUNT of projects WHERE customer_uuid = ?
-- `total_quotations` — COUNT of quotations WHERE customer_uuid = ?
-- `total_sale_plans` — COUNT of sale plans WHERE customer_uuid = ?
-- `total_orders` — COUNT of orders/BOQ items WHERE customer_uuid = ?
-- `total_contacts` — COUNT of contacts WHERE customer_uuid = ?
-- `total_visits` — COUNT of visits WHERE customer_uuid = ?
-- `total_quotation_value` — SUM of quotation amounts
-- `total_sale_plan_value` — SUM of sale plan amounts
-- `total_boq_value` — SUM of order line totals
-
-### Sleeping Customer Logic
-- `days_since_last_interaction` = CURRENT_DATE - MAX(timeline.timestamp)
-- Threshold default: 365 days (configurable via `sleeping_threshold_days` / `threshold_days`)
-- A customer is "sleeping" if they have no interaction of any type (visit, quotation, sale plan, order, appointment) within the threshold
-
-### Timeline Aggregation
-Timeline is built by UNION of events from:
-- appointments (nัดหมาย)
-- visits (เข้าเยี่ยม)
-- project updates
-- quotations
-- sale plans
-- contacts (new contact added)
-- notes
-
-All sorted by `timestamp` descending.
-
----
-
-## 🚀 Performance Considerations
-
-### Caching Strategy
-- Customer detail: Cache for 5 minutes (infrequently changed)
-- Customer list/search: No cache (dynamic queries)
-- Overview/analytics: Cache for 15 minutes (aggregated data)
-- Timeline: No cache (frequently updated)
-- Related entities: Cache for 5 minutes
-
-### Pagination
-- Default page size: 20 items
-- Max page size: 100 items for lists, 50 for timeline
-- Use `has_more` flag for infinite scroll / load-more UX
-
-### Rate Limiting
-- GET requests: 120 per minute
-- Analytics endpoints: 30 per minute
-
----
-
-**API Version**: v2
-**Last Updated**: June 4, 2026
-**Status**: Ready for Implementation
+## Data Models
+
+### CustomerPurchaseTrend
+| Field | Type | Description |
+|-------|------|-------------|
+| `month` | string | ISO month `YYYY-MM` |
+| `amount` | number | Total purchase amount |
+
+### CustomerTopProduct
+| Field | Type | Description |
+|-------|------|-------------|
+| `product_name` | string | Product name |
+| `quantity` | number | Units purchased |
+| `total_amount` | number | Total purchase amount |
+
+### CustomerPaymentBehavior
+| Field | Type | Description |
+|-------|------|-------------|
+| `on_time_payment_pct` | number | Percentage of invoices paid on time (0–100) |
+| `avg_overdue_days` | number | Average days overdue |
+| `total_invoices` | number | Total invoices in period |
+| `overdue_invoices` | number | Number of overdue invoices |
+
+### CustomerTimelineEvent
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Event UUID |
+| `event_type` | string | One of: appointment, visit, quotation, sale_plan, project_update, contact, note |
+| `title` | string | Event title |
+| `description` | string | Event description |
+| `event_date` | string | ISO datetime |
+| `created_at` | string | ISO datetime |
+| `related_type` | string | Related entity type |
+| `related_id` | string | Related entity ID |
+| `created_by` | object | `{ id: number, name: string }` |
+
+### CustomerCreditInfo
+| Field | Type | Description |
+|-------|------|-------------|
+| `credit_limit` | number | Credit limit |
+| `credit_used` | number | Used credit |
+| `credit_remaining` | number | Remaining credit |
+| `credit_utilization_pct` | number | Utilization percentage |
+| `on_time_payment_pct` | number | On-time payment percentage |
+| `avg_overdue_days` | number | Average overdue days |
+| `total_invoices` | number | Total invoices |
+| `overdue_invoices` | number | Overdue invoices |
+| `payment_behavior` | string | Rating: excellent, good, fair, poor |
+| `as_of_date` | string | Date (YYYY-MM-DD) |
+
+### CustomerNote
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Note UUID |
+| `content` | string | Note content |
+| `created_at` | string | ISO datetime |
+
+### CustomerDocument
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Document UUID |
+| `filename` | string | Original filename |
+| `file_type` | string | MIME type |
+| `file_size` | number | File size in bytes |
+| `document_type` | string | Category: quotation, invoice, contract, delivery_note, other |
+| `description` | string | Optional description |
+| `uploaded_at` | string | ISO datetime of upload |
+| `uploaded_by` | string | Uploader name |
+| `url` | string | Download URL |
+
+### CustomerAddress
+| Field | Type | Description |
+|-------|------|-------------|
+| `uuid` | string | Address UUID |
+| `type` | string | One of: head_office, project_site, warehouse, billing, other |
+| `label` | string | Address label |
+| `address_line1` | string | Street address line 1 |
+| `subdistrict` | string | Sub-district (tambon) |
+| `district` | string | District (amphoe) |
+| `province` | string | Province |
+| `postal_code` | string | Postal code |
+| `is_primary` | boolean | Whether this is the primary address |
