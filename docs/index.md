@@ -45,6 +45,21 @@ Complete specification package for development:
 
 ---
 
+## 🎯 Customer Insights — 360° Customer View + Analytics
+
+Complete specification package for development:
+
+### **📡 Critical for Backend:**
+- **[API Specification](customer-insights/02-API-SPECIFICATION.html)** — 12 endpoints covering customer data, timeline, related entities, and analytics
+- **[Database Schema](customer-insights/03-DATABASE-SCHEMA.html)** — Tables, indexes, and constraints
+- **[Integration Guide](customer-insights/04-GETTING-STARTED.html)** — Step-by-step frontend-to-backend workflow
+
+### **📋 Reference:**
+- **[Project Overview](customer-insights/01-PROJECT-OVERVIEW.html)** — Background, goals, and architecture
+- **[UI/UX Mockups](customer-insights/05-UI-MOCKUPS.html)** — Wireframes, layout, design tokens
+
+---
+
 ## 🔄 Plane Project Management
 
 Automated QA-to-Plane issue tracking system:
