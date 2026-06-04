@@ -16,6 +16,7 @@ title: Customer Insights Documentation
 
 ### **Priority 2 - Reference:**
 - **[📊 Project Overview](01-PROJECT-OVERVIEW.html)** — Background, goals, and architecture
+- **[🎨 UI/UX Mockups](05-UI-MOCKUPS.html)** — Wireframes, layout, design tokens, mobile/desktop views
 
 ---
 
