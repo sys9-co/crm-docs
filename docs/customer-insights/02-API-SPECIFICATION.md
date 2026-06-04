@@ -169,7 +169,134 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
 ---
 
-### **3. GET /customers/{customer_uuid}/overview — Customer Metrics Overview**
+### **3. PUT /customers/{customer_uuid} — Update Customer**
+
+```http
+PUT /crm/v2/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+Content-Type: application/json
+```
+
+**Request Body**:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `customer_name` | string | No | ชื่อลูกค้า |
+| `phone` | string | No | เบอร์โทรศัพท์ |
+| `email` | string | No | อีเมล |
+| `customer_type` | string | No | ประเภทลูกค้า (`contractor`, `supplier`, `developer`, `retailer`, `sub_contractor`, `architect`, `other`) |
+| `tier` | string | No | ระดับ (`A`, `B`, `C`) |
+| `customer_status` | string | No | สถานะ (`active`, `dormant`, `churned`) |
+| `tags` | string[] | No | แท็ก (array of strings) |
+| `credit_term` | number | No | เครดิตเทอม (วัน) |
+| `credit_limit` | number | No | วงเงินเครดิต |
+| `address_line1` | string | No | ที่อยู่ |
+| `province` | string | No | จังหวัด |
+| `district` | string | No | เขต/อำเภอ |
+| `subdistrict` | string | No | แขวง/ตำบล |
+| `postal_code` | string | No | รหัสไปรษณีย์ |
+
+**Example Request**:
+```json
+{
+  "customer_name": "หจก.ก่อสร้างเจริญกิจ (แก้ไข)",
+  "phone": "081-234-5678",
+  "email": "info@charoenkit.com",
+  "customer_type": "contractor",
+  "tier": "A",
+  "customer_status": "active",
+  "tags": ["VIP", "ประจำ"],
+  "credit_term": 30,
+  "credit_limit": 1000000.00,
+  "province": "กรุงเทพมหานคร",
+  "district": "คลองเตย"
+}
+```
+
+**Response Success (200)**:
+```json
+{
+  "status": true,
+  "message": "บันทึกข้อมูลลูกค้าสำเร็จ",
+  "data": {
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "customer_name": "หจก.ก่อสร้างเจริญกิจ (แก้ไข)",
+    "updated_at": "2026-06-04T14:30:00Z"
+  }
+}
+```
+
+**Error Codes**: `CUSTOMER_NOT_FOUND` (404), `VALIDATION_ERROR` (422), `UNAUTHORIZED`, `FORBIDDEN`
+
+---
+
+### **4. GET /customers/{customer_uuid}/credit — Credit Info**
+
+```http
+GET /crm/v2/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/credit
+```
+
+**Response Success (200)**:
+```json
+{
+  "status": true,
+  "message": "โหลดข้อมูลเครดิตสำเร็จ",
+  "data": {
+    "credit_limit": 1000000.00,
+    "credit_used": 450000.00,
+    "credit_available": 550000.00,
+    "credit_term": 30,
+    "payment_due_days": 15,
+    "overdue_amount": 0.00,
+    "last_payment_date": "2026-05-15",
+    "last_payment_amount": 150000.00
+  }
+}
+```
+
+**Error Codes**: `CUSTOMER_NOT_FOUND` (404), `UNAUTHORIZED`, `FORBIDDEN`
+
+---
+
+### **5. POST /customers/{customer_uuid}/notes — Add Note**
+
+```http
+POST /crm/v2/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/notes
+Content-Type: application/json
+```
+
+**Request Body**:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `content` | string | Yes | เนื้อหาโน๊ต |
+
+**Example Request**:
+```json
+{
+  "content": "ลูกค้าสนใจสินค้ากลุ่มเหล็กโครงสร้าง"
+}
+```
+
+**Response Success (201)**:
+```json
+{
+  "status": true,
+  "message": "เพิ่มโน๊ตสำเร็จ",
+  "data": {
+    "id": 101,
+    "customer_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "content": "ลูกค้าสนใจสินค้ากลุ่มเหล็กโครงสร้าง",
+    "created_by": "พนักงาน ขายดี",
+    "created_at": "2026-06-04T14:30:00Z"
+  }
+}
+```
+
+**Error Codes**: `CUSTOMER_NOT_FOUND` (404), `VALIDATION_ERROR` (422), `UNAUTHORIZED`, `FORBIDDEN`
+
+---
+
+### **6. GET /customers/{customer_uuid}/overview — Customer Metrics Overview**
 
 ```http
 GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/overview
@@ -199,7 +326,7 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/overview
 
 ## 🔗 Related Entity Endpoints
 
-### **4. GET /customers/{customer_uuid}/timeline — Activity Timeline**
+### **7. GET /customers/{customer_uuid}/timeline — Activity Timeline**
 
 ```http
 GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/timeline?page=1&size=20
@@ -267,7 +394,7 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/timeline?page=1&size=
 
 ---
 
-### **5. GET /customers/{customer_uuid}/quotations — Quotations**
+### **8. GET /customers/{customer_uuid}/quotations — Quotations**
 
 ```http
 GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/quotations?page=1&size=20&status=เสนอราคา
@@ -310,7 +437,7 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/quotations?page=1&siz
 
 ---
 
-### **6. GET /customers/{customer_uuid}/sale-plans — Sale Plans**
+### **9. GET /customers/{customer_uuid}/sale-plans — Sale Plans**
 
 ```http
 GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/sale-plans?page=1&size=20&status=active
@@ -352,7 +479,7 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/sale-plans?page=1&siz
 
 ---
 
-### **7. GET /customers/{customer_uuid}/orders — Customer Orders / BOQ**
+### **10. GET /customers/{customer_uuid}/orders — Customer Orders / BOQ**
 
 ```http
 GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/orders?page=1&size=20&status=ดำเนินการ
@@ -396,7 +523,7 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/orders?page=1&size=20
 
 ---
 
-### **8. GET /customers/{customer_uuid}/projects — Customer Projects**
+### **11. GET /customers/{customer_uuid}/projects — Customer Projects**
 
 ```http
 GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/projects
@@ -428,7 +555,7 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/projects
 
 ---
 
-### **9. GET /customers/{customer_uuid}/contacts — Customer Contacts**
+### **12. GET /customers/{customer_uuid}/contacts — Customer Contacts**
 
 ```http
 GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/contacts
@@ -464,7 +591,7 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/contacts
 
 ---
 
-### **10. GET /customers/{customer_uuid}/visits — Customer Visits**
+### **13. GET /customers/{customer_uuid}/visits — Customer Visits**
 
 ```http
 GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/visits?page=1&size=10
@@ -506,7 +633,7 @@ GET /crm/v1/customers/a1b2c3d4-e5f6-7890-abcd-ef1234567890/visits?page=1&size=10
 
 ## 📊 Analytics Endpoints
 
-### **11. GET /customers/analytics — Dashboard Analytics**
+### **14. GET /customers/analytics — Dashboard Analytics**
 
 ```http
 GET /crm/v1/customers/analytics?sleeping_threshold_days=365
@@ -589,7 +716,7 @@ GET /crm/v1/customers/analytics?sleeping_threshold_days=365
 
 ---
 
-### **12. GET /customers/sleeping — Sleeping Customers**
+### **15. GET /customers/sleeping — Sleeping Customers**
 
 ```http
 GET /crm/v1/customers/sleeping?threshold_days=365&page=1&size=20
@@ -663,6 +790,9 @@ interface Customer {
   customer_code: string           // Human-readable code (e.g., "CUST-001")
   customer_name: string           // Full customer name
   customer_type?: string          // Type (e.g., "contractor", "retail", "developer")
+  tier?: 'A' | 'B' | 'C'         // Customer tier/level
+  customer_status?: 'active' | 'dormant' | 'churned'  // Current status
+  tags?: string[]                 // Tags (e.g., ["VIP", "ประจำ"])
   phone?: string
   email?: string
   tax_id?: string                 // Thai Tax ID (13 digits)
@@ -685,6 +815,9 @@ interface Customer {
     tiktok?: string
     website?: string
   }
+  credit_term?: number            // เครดิตเทอม (วัน)
+  credit_limit?: number           // วงเงินเครดิต
+  health_score?: number           // 0–100 health score
   last_interacted?: string        // ISO 8601 datetime of last interaction across all types
   total_projects?: number         // Aggregated count
   total_quotations?: number       // Aggregated count
@@ -695,6 +828,41 @@ interface Customer {
   active_status?: number          // 1 = active, 0 = inactive
   created_at?: string             // ISO 8601 datetime
   updated_at?: string             // ISO 8601 datetime
+}
+```
+
+### **CustomerCreditInfo**
+```typescript
+interface CustomerCreditInfo {
+  credit_limit: number            // วงเงินเครดิต
+  credit_used: number             // เครดิตที่ใช้ไป
+  credit_available: number        // เครดิตคงเหลือ
+  credit_term: number             // เครดิตเทอม (วัน)
+  payment_due_days: number        // วันที่เหลือก่อนกำหนดชำระ
+  overdue_amount: number          // ยอดค้างชำระ
+  last_payment_date?: string      // วันที่ชำระล่าสุด (ISO 8601 date)
+  last_payment_amount?: number    // ยอดที่ชำระล่าสุด
+}
+```
+
+### **CustomerNote**
+```typescript
+interface CustomerNote {
+  id: number                      // Note ID
+  customer_uuid: string           // Associated customer UUID
+  content: string                 // Note content
+  created_by: string              // Creator name
+  created_at: string              // ISO 8601 datetime
+}
+```
+
+### **HealthScoreWeights**
+```typescript
+interface HealthScoreWeights {
+  recency: number                 // Weight for days since last interaction (default: 40)
+  frequency: number               // Weight for interaction frequency (default: 30)
+  monetary: number                // Weight for total value (default: 20)
+  credit: number                  // Weight for credit health (default: 10)
 }
 ```
 
