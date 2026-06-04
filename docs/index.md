@@ -60,6 +60,14 @@ Complete specification package for development:
 
 ---
 
+## 🎨 UI Design System
+
+Complete design system documentation extracted from the CRM codebase:
+
+- **[Full Design System Reference](design-system/index.html)** — Design tokens, component patterns, layout, forms, navigation, data display, responsive, icons, and Thai conventions
+
+---
+
 ## 🔄 Plane Project Management
 
 Automated QA-to-Plane issue tracking system:

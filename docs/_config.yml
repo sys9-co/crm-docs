@@ -1,7 +1,7 @@
 # GitHub Pages Configuration for SYS9 CRM Documentation
 theme: jekyll-theme-cayman
 title: "SYS9 CRM Documentation"
-description: "Complete specification package for Sale Plan v2 backend implementation"
+description: "Complete specification and design system for SYS9 CRM — Sale Plan v2, Dashboard v2, Customer Insights, UI Design System, Plane QA integration"
 
 # Site settings
 show_downloads: true
