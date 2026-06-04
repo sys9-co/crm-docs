@@ -760,6 +760,91 @@ GET /crm/v1/customers/sleeping?threshold_days=365&page=1&size=20
 
 ---
 
+### **16. GET /customers/{customer_uuid}/purchase-trend — Purchase Trend**
+
+```http
+GET /crm/v2/customers/{customer_uuid}/purchase-trend?months=12
+```
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `months` | integer | No | 12 | Number of months to return |
+
+**Response Success (200)**:
+```json
+{
+  "status": true,
+  "message": "โหลดแนวโน้มการซื้อสำเร็จ",
+  "data": [
+    { "month": "2025-07", "amount": 320000 },
+    { "month": "2025-08", "amount": 450000 }
+  ]
+}
+```
+
+**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
+
+---
+
+### **17. GET /customers/{customer_uuid}/top-products — Top Products**
+
+```http
+GET /crm/v2/customers/{customer_uuid}/top-products?limit=5
+```
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `limit` | integer | No | 5 | Number of top products to return |
+
+**Response Success (200)**:
+```json
+{
+  "status": true,
+  "message": "โหลดสินค้าขายดีสำเร็จ",
+  "data": [
+    { "product_name": "ปูนซีเมนต์ปอร์ตแลนด์ ประเภท 1", "quantity": 2500, "total_amount": 4250000 }
+  ]
+}
+```
+
+**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
+
+---
+
+### **18. GET /customers/{customer_uuid}/payment-behavior — Payment Behavior**
+
+```http
+GET /crm/v2/customers/{customer_uuid}/payment-behavior?months=12
+```
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `months` | integer | No | 12 | Lookback period for invoice data |
+
+**Response Success (200)**:
+```json
+{
+  "status": true,
+  "message": "โหลดพฤติกรรมการชำระเงินสำเร็จ",
+  "data": {
+    "on_time_payment_pct": 85,
+    "avg_overdue_days": 8,
+    "total_invoices": 48,
+    "overdue_invoices": 7
+  }
+}
+```
+
+**Error Codes**: `CUSTOMER_NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`
+
+---
+
 ## 📋 Data Models
 
 ### **APIResponse\<T\>**
@@ -1016,6 +1101,33 @@ interface SleepingCustomer {
 }
 ```
 
+### **CustomerPurchaseTrend**
+```typescript
+interface CustomerPurchaseTrend {
+  month: string                    // "YYYY-MM" format
+  amount: number                   // Total purchase amount for the month
+}
+```
+
+### **CustomerTopProduct**
+```typescript
+interface CustomerTopProduct {
+  product_name: string              // Product name in Thai
+  quantity: number                  // Units purchased
+  total_amount: number              // Total purchase amount
+}
+```
+
+### **CustomerPaymentBehavior**
+```typescript
+interface CustomerPaymentBehavior {
+  on_time_payment_pct: number      // Percentage 0–100
+  avg_overdue_days: number         // Average days overdue
+  total_invoices: number           // Total invoices in period
+  overdue_invoices: number         // Number of overdue invoices
+}
+```
+
 ---
 
 ## ⚠️ Error Codes
@@ -1082,6 +1194,6 @@ All sorted by `timestamp` descending.
 
 ---
 
-**API Version**: v1
+**API Version**: v2
 **Last Updated**: June 4, 2026
 **Status**: Ready for Implementation
