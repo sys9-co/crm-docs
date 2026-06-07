@@ -101,6 +101,15 @@ Matrix validation, Thai date formatting, calculation rules
 
 ---
 
+## 🎯 Calendar + Visits Integration — Unified Calendar View
+
+Complete specification for showing both appointments and visits on the `/appointment` calendar page:
+
+### **📡 For Backend:**
+- **[Project Overview](calendar-visits/01-PROJECT-OVERVIEW.html)** — Data model, UI layout, API requirements, color scheme, and implementation scope
+
+---
+
 ## 📊 Current Status
 
 - **Frontend**: ✅ Complete prototype
