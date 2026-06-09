@@ -107,6 +107,10 @@ Complete specification for showing both appointments and visits on the `/appoint
 
 ### **📡 For Backend:**
 - **[Project Overview](calendar-visits/01-PROJECT-OVERVIEW.html)** — Data model, UI layout, API requirements, color scheme, and implementation scope
+- **[API Specification](calendar-visits/02-API-SPECIFICATION.html)** — 11 endpoints, request/response schemas, CalendarEvent data model, backend gaps
+
+### **📋 Reference:**
+- **[Section Home](calendar-visits/index.html)** — Quick navigation, status, backend gaps summary
 
 ---
 
