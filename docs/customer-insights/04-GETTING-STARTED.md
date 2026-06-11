@@ -20,7 +20,7 @@
 - All UI text in Thai
 
 #### **Backend Team (Separate Repo)**
-- API specification implementation (12 endpoints)
+- API specification implementation (25 routes — see 02-API-SPECIFICATION.md v1.1)
 - Database schema creation (customers table + related entity tables)
 - Aggregation query optimization
 - Timeline UNION/aggregation logic
@@ -55,7 +55,7 @@ The frontend is designed to work **independently** with mock data fallback. Ever
 
 ### **Phase 3: Integration Testing**
 - Switch from mock data to real API responses
-- Verify all 12 endpoints return correct `APIResponse<T>` shapes
+- Verify all endpoints return correct `APIResponse<T>` / `PaginatedResponse<T>` shapes
 - Test pagination, sorting, and filtering
 - Validate Thai text in responses
 - E2E tests with real backend
@@ -176,11 +176,11 @@ When `bypass_auth=true` in `.env`, the app auto-populates `accesstoken` and `mer
 
 ---
 
-## 📊 API Endpoint URL Map
+## 📊 API Endpoint URL Map (target — spec v1.1)
 
 | Frontend Composable Method | API Endpoint | Method |
 |---|---|---|
-| `searchCustomers(params)` | `/customers?search=...&page=...&size=...&sort_by=...&sort_order=...&province=...&district=...&last_visit_from=...&last_visit_to=...` | GET |
+| `searchCustomers(params)` | `/customers?search=...&page=...&size=...&sort_by=...&sort_order=...&customer_status=...&province=...&district=...&min_projects=...&last_visit_from=...&last_visit_to=...` | GET |
 | `fetchCustomer(uuid)` | `/customers/{customer_uuid}` | GET |
 | `fetchOverview(uuid, months)` | `/customers/{customer_uuid}/overview` | GET |
 | `fetchTimeline(uuid, months, page, size)` | `/customers/{customer_uuid}/timeline?page=...&size=...` | GET |
@@ -192,6 +192,18 @@ When `bypass_auth=true` in `.env`, the app auto-populates `accesstoken` and `mer
 | (CustomerVisits.vue) | `/customers/{customer_uuid}/visits?page=...&size=...` | GET |
 | `fetchAnalytics()` | `/customers/analytics?sleeping_threshold_days=...` | GET |
 | `fetchSleepingCustomers(days)` | `/customers/sleeping?threshold_days=...&page=...&size=...` | GET |
+
+## ⚠️ Known Frontend Deviations (fix in Phase 5 — backend must NOT implement these)
+
+The frontend currently deviates from spec v1.1 in these places. Backend implements **the spec**; the frontend will be aligned in Phase 5:
+
+| # | Current frontend behavior | Spec v1.1 target | File |
+|---|---|---|---|
+| 1 | `searchCustomers()` sends only `search`, `page`, `size` — filters/sort collected by the UI are dropped | Send all §14 params | `ui/composables/useCustomer.ts` (`searchCustomers`) |
+| 2 | Orders fetched from `/customers/{uuid}/boq` | `/customers/{uuid}/orders` | `ui/composables/useCustomer.ts` (`fetchOrders`) |
+| 3 | Analytics from `/dashboard/customer-insights`, sleeping from `/dashboard/sleeping-customers?days=` | `/customers/analytics?sleeping_threshold_days=`, `/customers/sleeping?threshold_days=` | `ui/composables/useCustomerAnalytics.ts` |
+| 4 | Quick filter "หลับ" filters client-side on the current page only | Server-side `customer_status=sleeping` | `ui/pages/customers/index.vue` (`doSearch`) |
+| 5 | Timeline/quotations/sale-plans/orders typed as bare arrays | `PaginatedResponse<T>` envelope | `ui/composables/useCustomer.ts` types + consumers |
 
 ---
 
@@ -228,12 +240,15 @@ await page.route('**/crm/**/customers/**', async (route: Route) => {
 ### **Contract Testing Checklist**
 
 - [ ] Response matches `APIResponse<T>` shape (`status`, `message`, `data`)
-- [ ] Paginated endpoints return `PaginatedResponse<T>` shape
+- [ ] Every endpoint with `page`/`size` returns `PaginatedResponse<T>` (`items`, `total`, `page`, `size`, `has_more`) — no bare arrays
 - [ ] All timestamps in ISO 8601 format
 - [ ] Error responses include `error_code`
 - [ ] Missing customer returns 404 with `CUSTOMER_NOT_FOUND`
+- [ ] `/customers/analytics` and `/customers/sleeping` are routable (registered before `/customers/{uuid}`)
+- [ ] `customer_status=sleeping` filter computed server-side with `threshold_days` default 365
 - [ ] Sleep detection threshold parameter works correctly
-- [ ] Sorting by all `sort_by` values works (name, last_interacted, project_count, contact_count)
+- [ ] Sorting by all `sort_by` values works (name, last_interacted, project_count, contact_count, updated_at)
+- [ ] Thai text round-trips correctly (UTF-8) in all create/update endpoints
 
 ---
 
@@ -241,9 +256,9 @@ await page.route('**/crm/**/customers/**', async (route: Route) => {
 
 ### **Deployment Sequence:**
 1. **Database migration** — Create `customers` table, apply indexes
-2. **Backend API** — Implement all 12 endpoints
+2. **Backend API** — Implement spec v1.1 (25 routes; core read endpoints first: list, profile, overview, timeline)
 3. **API integration test** — Verify responses match spec
-4. **Frontend** — Switch from mock data to real API (composables already handle both)
+4. **Frontend Phase 5** — Fix the 5 known deviations, then switch from mock data to real API (composables already handle both)
 5. **E2E tests** — Run full suite against real backend
 
 ### **What NOT to change in frontend after backend is ready:**
@@ -253,6 +268,6 @@ await page.route('**/crm/**/customers/**', async (route: Route) => {
 
 ---
 
-**Integration Guide Version**: 1.0
-**Last Updated**: June 4, 2026
-**Status**: Ready for Backend Team Review
+**Integration Guide Version**: 1.1
+**Last Updated**: June 11, 2026
+**Status**: Spec frozen — Ready for Backend Implementation

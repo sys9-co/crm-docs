@@ -94,23 +94,35 @@ ui/composables/
 API Base: /crm/{api_version}/customers
 
 Core:
-  GET /customers                           — Search & list (paginated)
+  GET /customers                           — Search & list (paginated, filters)
   GET /customers/{customer_uuid}           — Single customer detail
+  PUT /customers/{customer_uuid}           — Update profile (partial)
   GET /customers/{customer_uuid}/overview  — Aggregated metrics
 
 Related Entities:
-  GET /customers/{customer_uuid}/timeline     — Activity timeline
-  GET /customers/{customer_uuid}/quotations   — Quotations
-  GET /customers/{customer_uuid}/sale-plans   — Sale plans
-  GET /customers/{customer_uuid}/orders       — Orders
+  GET /customers/{customer_uuid}/timeline     — Activity timeline (paginated)
+  GET /customers/{customer_uuid}/quotations   — Quotations (paginated)
+  GET /customers/{customer_uuid}/sale-plans   — Sale plans (paginated)
+  GET /customers/{customer_uuid}/orders       — Orders/BOQ (paginated)
   GET /customers/{customer_uuid}/projects     — Projects
   GET /customers/{customer_uuid}/contacts     — Contacts
-  GET /customers/{customer_uuid}/visits       — Visits
+  GET /customers/{customer_uuid}/visits       — Visits (paginated)
 
-Analytics:
+360° Extras:
+  GET  /customers/{customer_uuid}/credit            — Credit info
+  GET  /customers/{customer_uuid}/purchase-trend    — Monthly purchase trend
+  GET  /customers/{customer_uuid}/top-products      — Top products
+  GET  /customers/{customer_uuid}/payment-behavior  — Payment behavior
+  POST /customers/{customer_uuid}/notes             — Add note
+  GET/POST/DELETE /customers/{customer_uuid}/documents      — Documents
+  GET/POST/PUT/DELETE /customers/{customer_uuid}/addresses  — Addresses
+
+Analytics (route BEFORE /customers/{uuid}):
   GET /customers/analytics                    — Dashboard analytics
-  GET /customers/sleeping                     — Sleeping customer list
+  GET /customers/sleeping                     — Sleeping customer list (paginated)
 ```
+
+> Full request/response contracts: [02-API-SPECIFICATION.md](./02-API-SPECIFICATION.md) **v1.1** — reconciled with frontend code June 11, 2026.
 
 ## 📊 Business Requirements
 
@@ -149,7 +161,7 @@ Analytics:
 ---
 
 **Created**: June 4, 2026
-**Last Updated**: June 4, 2026
-**Version**: 1.0
-**Status**: Planning Phase
-**Plane Card**: CRM-XX (Customer Insights — Main Feature)
+**Last Updated**: June 11, 2026
+**Version**: 1.1
+**Status**: Spec frozen — Ready for Backend Implementation (frontend complete on mock data)
+**Plane Card**: [FEATURE] Customer Insights — see Plane project sys9/CRM

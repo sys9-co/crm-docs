@@ -1,5 +1,16 @@
 # Customer Insights — API Specification
 
+> **Version 1.1** — reconciled with the actual frontend implementation (June 11, 2026). This document is the **single source of truth** for the backend team; where the current frontend code deviates, the deviation is listed in [04-GETTING-STARTED → Known Frontend Deviations](./04-GETTING-STARTED.md) and will be fixed frontend-side in Phase 5.
+
+## Changelog v1.1
+
+- **Added** missing endpoint specs the frontend already calls: `/customers/{uuid}/projects`, `/contacts`, `/visits` (§17–19) and the analytics pair `/customers/analytics`, `/customers/sleeping` (§20–21)
+- **Decided** canonical analytics paths: `/customers/analytics` + `/customers/sleeping` (frontend currently calls `/dashboard/customer-insights` + `/dashboard/sleeping-customers` — to be changed in Phase 5)
+- **Decided** canonical orders path: `/customers/{uuid}/orders` (frontend currently calls `/boq` — to be changed in Phase 5)
+- **Unified** list/search query params (§14): `last_visit_from`/`last_visit_to` replace `date_from`/`date_to`; added `district`, `min_projects`; `sort_by` enum pinned
+- **Standardized** every endpoint that accepts `page`/`size` to return the `PaginatedResponse<T>` envelope (§4–7, §15 GET, §19)
+- **Removed** duplicate search endpoint `GET /customers/data` (former §13) — use `GET /customers` (§14)
+
 ## Endpoints Overview
 
 **Base URL**: `/crm/v2`
@@ -19,6 +30,21 @@ Response envelope:
   "status": true,
   "message": "success",
   "data": {}
+}
+```
+
+Paginated envelope — **every endpoint that accepts `page`/`size` returns `data` in this shape** (no bare arrays):
+```json
+{
+  "status": true,
+  "message": "success",
+  "data": {
+    "items": [],
+    "total": 0,
+    "page": 1,
+    "size": 20,
+    "has_more": false
+  }
 }
 ```
 
@@ -132,26 +158,32 @@ Response envelope:
 
 **Event types**: `appointment`, `visit`, `quotation`, `sale_plan`, `project_update`, `contact`, `note`
 
-**Response 200**:
+**Response 200** (paginated envelope):
 ```json
 {
   "status": true,
-  "data": [
-    {
-      "id": "evt-001",
-      "event_type": "appointment",
-      "title": "นัดดูงาน",
-      "description": "นัดดูโครงการตัวอย่าง",
-      "event_date": "2026-05-20T10:00:00Z",
-      "created_at": "2026-05-19T14:30:00Z",
-      "related_type": "quotation",
-      "related_id": "Q2026-001",
-      "created_by": {
-        "id": 1,
-        "name": "พนักงาน ขาย"
+  "data": {
+    "items": [
+      {
+        "id": "evt-001",
+        "event_type": "appointment",
+        "title": "นัดดูงาน",
+        "description": "นัดดูโครงการตัวอย่าง",
+        "event_date": "2026-05-20T10:00:00Z",
+        "created_at": "2026-05-19T14:30:00Z",
+        "related_type": "quotation",
+        "related_id": "Q2026-001",
+        "created_by": {
+          "id": 1,
+          "name": "พนักงาน ขาย"
+        }
       }
-    }
-  ]
+    ],
+    "total": 42,
+    "page": 1,
+    "size": 20,
+    "has_more": true
+  }
 }
 ```
 
@@ -169,20 +201,26 @@ Response envelope:
 | `page` | int | 1 | Page number |
 | `size` | int | 20 | Items per page |
 
-**Response 200**:
+**Response 200** (paginated envelope):
 ```json
 {
   "status": true,
-  "data": [
-    {
-      "id": "Q2026-001",
-      "quotation_date": "2026-05-01",
-      "total_amount": 250000,
-      "status": "approved",
-      "description": "ค่าวัสดุก่อสร้าง โครงการบ้าน ABC",
-      "expire_date": "2026-06-01"
-    }
-  ]
+  "data": {
+    "items": [
+      {
+        "id": "Q2026-001",
+        "quotation_date": "2026-05-01",
+        "total_amount": 250000,
+        "status": "approved",
+        "description": "ค่าวัสดุก่อสร้าง โครงการบ้าน ABC",
+        "expire_date": "2026-06-01"
+      }
+    ],
+    "total": 12,
+    "page": 1,
+    "size": 20,
+    "has_more": false
+  }
 }
 ```
 
@@ -200,21 +238,27 @@ Response envelope:
 | `page` | int | 1 | Page number |
 | `size` | int | 20 | Items per page |
 
-**Response 200**:
+**Response 200** (paginated envelope):
 ```json
 {
   "status": true,
-  "data": [
-    {
-      "id": "SP2026-001",
-      "title": "แผนขาย โครงการบ้าน ABC",
-      "total_amount": 5000000,
-      "status": "active",
-      "start_date": "2026-05-01",
-      "end_date": "2026-08-31",
-      "progress_pct": 45
-    }
-  ]
+  "data": {
+    "items": [
+      {
+        "id": "SP2026-001",
+        "title": "แผนขาย โครงการบ้าน ABC",
+        "total_amount": 5000000,
+        "status": "active",
+        "start_date": "2026-05-01",
+        "end_date": "2026-08-31",
+        "progress_pct": 45
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "size": 20,
+    "has_more": false
+  }
 }
 ```
 
@@ -224,7 +268,9 @@ Response envelope:
 
 ### GET /crm/v2/customers/{uuid}/orders
 
-**Description**: Get customer orders list
+**Description**: Get customer orders list (BOQ-based purchase orders)
+
+> **Canonical path decision (v1.1)**: `/orders`. The current frontend calls `/customers/{uuid}/boq` — frontend will migrate to `/orders` in Phase 5. Backend implements `/orders` only.
 
 **Query params**:
 | Param | Type | Default | Description |
@@ -232,20 +278,26 @@ Response envelope:
 | `page` | int | 1 | Page number |
 | `size` | int | 20 | Items per page |
 
-**Response 200**:
+**Response 200** (paginated envelope):
 ```json
 {
   "status": true,
-  "data": [
-    {
-      "id": "ORD2026-001",
-      "order_date": "2026-04-15",
-      "total_amount": 1200000,
-      "status": "delivered",
-      "payment_status": "paid",
-      "items_count": 5
-    }
-  ]
+  "data": {
+    "items": [
+      {
+        "id": "ORD2026-001",
+        "order_date": "2026-04-15",
+        "total_amount": 1200000,
+        "status": "delivered",
+        "payment_status": "paid",
+        "items_count": 5
+      }
+    ],
+    "total": 24,
+    "page": 1,
+    "size": 20,
+    "has_more": true
+  }
 }
 ```
 
@@ -392,20 +444,39 @@ Response envelope:
 
 ---
 
-## 13. Customer Data (Search)
+## 13. ~~Customer Data (Search)~~ — REMOVED in v1.1
 
-### GET /crm/v2/customers/data
+`GET /crm/v2/customers/data` duplicated §14 with the same response shape and is **not used by the frontend**. Use `GET /crm/v2/customers` (§14). Section number kept to avoid renumbering churn.
 
-**Description**: Search customers by keyword
+---
 
-**Query params**:
+## 14. List / Search Customers
+
+### GET /crm/v2/customers
+
+**Description**: List customers with full-text search and filters for the `/customers` list page. This is the **only** customer search endpoint.
+
+**Query params** (unified v1.1 — matches what the UI collects):
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
-| `search` | string | — | Search keyword (name, code, phone) |
+| `search` | string | — | Full-text keyword: name, code, phone, email |
 | `page` | int | 1 | Page number |
 | `size` | int | 20 | Items per page |
+| `customer_type` | string | — | Filter: `individual`, `juristic` |
+| `customer_tier` | string | — | Filter: `regular`, `silver`, `gold`, `platinum` |
+| `customer_status` | string | — | Filter: `active`, `inactive`, `sleeping`, `blacklist`. **`sleeping` MUST be computed server-side** (last interaction ≥ threshold; default 365 days) — client-side filtering breaks pagination |
+| `province` | string | — | Filter by province name |
+| `district` | string | — | Filter by district name |
+| `min_projects` | int | — | Only customers with at least N projects (UI quick filter "มีโครงการ" sends `min_projects=1`) |
+| `last_visit_from` | string | — | Last-visit range start (YYYY-MM-DD) |
+| `last_visit_to` | string | — | Last-visit range end (YYYY-MM-DD) |
+| `tag` | string | — | Filter by tag |
+| `sort_by` | string | `updated_at` | One of: `name`, `last_interacted`, `project_count`, `contact_count`, `updated_at` |
+| `sort_order` | string | `desc` | `asc` or `desc` |
 
-**Response 200**:
+> v1.1 note: `date_from`/`date_to` are **replaced** by `last_visit_from`/`last_visit_to` (the UI filter is semantically "ช่วงวันที่เข้าเยี่ยมล่าสุด").
+
+**Response 200** (paginated envelope):
 ```json
 {
   "status": true,
@@ -419,8 +490,12 @@ Response envelope:
         "phone": "081-234-5678",
         "customer_type": "individual",
         "customer_tier": "gold",
+        "customer_status": "active",
+        "province": "กรุงเทพมหานคร",
         "avatar_url": "https://cdn.example.com/avatars/c7a2b3d4.jpg",
-        "last_interaction_date": "2026-05-15"
+        "last_interaction_date": "2026-05-15",
+        "project_count": 4,
+        "contact_count": 2
       }
     ],
     "total": 1,
@@ -430,32 +505,6 @@ Response envelope:
   }
 }
 ```
-
----
-
-## 14. List Customers (Filtered)
-
-### GET /crm/v2/customers
-
-**Description**: List customers with filters for list page
-
-**Query params**:
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `search` | string | — | Search keyword |
-| `page` | int | 1 | Page number |
-| `size` | int | 20 | Items per page |
-| `customer_type` | string | — | Filter: individual, juristic |
-| `customer_tier` | string | — | Filter: regular, silver, gold, platinum |
-| `customer_status` | string | — | Filter: active, inactive, sleeping, blacklist |
-| `province` | string | — | Filter by province name |
-| `sort_by` | string | `updated_at` | Sort field |
-| `sort_order` | string | `desc` | asc or desc |
-| `date_from` | string | — | Start date (YYYY-MM-DD) |
-| `date_to` | string | — | End date (YYYY-MM-DD) |
-| `tag` | string | — | Filter by tag |
-
-**Response 200**: Same shape as `/customers/data` with pagination
 
 ---
 
@@ -612,6 +661,175 @@ Response envelope:
 
 ---
 
+## 17. Customer Projects *(new in v1.1 — frontend already calls this)*
+
+### GET /crm/v2/customers/{uuid}/projects
+
+**Description**: Get projects linked to this customer (360° page "โครงการ" card — `CustomerProjects.vue`)
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": "proj-uuid-001",
+      "name": "โครงการบ้าน ABC",
+      "code": "PRJ-2026-001",
+      "status": "active"
+    }
+  ]
+}
+```
+
+---
+
+## 18. Customer Contacts *(new in v1.1 — frontend already calls this)*
+
+### GET /crm/v2/customers/{uuid}/contacts
+
+**Description**: Get contact persons linked to this customer (360° page "รายชื่อติดต่อ" card — `CustomerContacts.vue`)
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": "contact-uuid-001",
+      "contact_name": "สมหญิง ใจดี",
+      "phone": "081-234-5678",
+      "email": "somying@email.com"
+    }
+  ]
+}
+```
+
+---
+
+## 19. Customer Visits *(new in v1.1 — frontend already calls this)*
+
+### GET /crm/v2/customers/{uuid}/visits
+
+**Description**: Get site visits for this customer with load-more pagination (360° page "การเข้าเยี่ยม" card — `CustomerVisits.vue`)
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | int | 1 | Page number |
+| `size` | int | 10 | Items per page |
+
+**Response 200** (paginated envelope):
+```json
+{
+  "status": true,
+  "data": {
+    "items": [
+      {
+        "id": "visit-uuid-001",
+        "title": "เข้าเยี่ยมหน้างาน",
+        "description": "ติดตามความคืบหน้างานโครงสร้าง",
+        "date": "2026-05-20T10:00:00Z"
+      }
+    ],
+    "total": 18,
+    "page": 1,
+    "size": 10,
+    "has_more": true
+  }
+}
+```
+
+---
+
+## 20. Customer Analytics Dashboard *(new in v1.1)*
+
+### GET /crm/v2/customers/analytics
+
+**Description**: Aggregated analytics for the `/customers/insights` dashboard — KPIs, distributions, trends, segmentation
+
+> **Canonical path decision (v1.1)**: `/customers/analytics`. The current frontend calls `/dashboard/customer-insights` — frontend will migrate in Phase 5. Backend implements `/customers/analytics` only.
+>
+> ⚠️ Routing note: this route MUST be registered **before** `/customers/{uuid}` so that `analytics` is not captured as a UUID path param (same for `/customers/sleeping`, §21).
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sleeping_threshold_days` | int | 365 | Days without interaction to count a customer as inactive/sleeping |
+
+**Response 200**:
+```json
+{
+  "status": true,
+  "data": {
+    "total_customers": 520,
+    "active_customers": 380,
+    "inactive_customers": 140,
+    "new_customers_this_month": 12,
+    "customers_by_province": [ { "province": "กรุงเทพมหานคร", "count": 180 } ],
+    "customers_by_district": [ { "district": "คลองเตย", "count": 45 } ],
+    "new_customers_over_time": [ { "month": "2026-01", "count": 8 } ],
+    "top_customers_by_value": [
+      {
+        "customer": { "uuid": "uuid-cust-001", "customer_code": "CUST-001", "customer_name": "หจก.ก่อสร้างเจริญกิจ" },
+        "total_value": 18500000
+      }
+    ],
+    "customers_by_project_count": [ { "range": "1-2 โครงการ", "count": 240 } ],
+    "acquisition_trend": [ { "month": "2026-01", "cumulative": 420 } ]
+  }
+}
+```
+
+**Field notes**:
+- `top_customers_by_value`: `total_value` = quotation + sale plan + order value combined; max 10 rows, sorted desc
+- `customers_by_province` / `customers_by_district`: top 10 / top 5, sorted by count desc
+- `new_customers_over_time` / `acquisition_trend`: last 6 months, ISO month `YYYY-MM`
+
+---
+
+## 21. Sleeping Customers *(new in v1.1)*
+
+### GET /crm/v2/customers/sleeping
+
+**Description**: Customers with no interaction beyond the threshold (insights dashboard table + outreach triggers)
+
+**Query params**:
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `threshold_days` | int | 365 | Days without interaction |
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page |
+
+**Response 200** (paginated envelope):
+```json
+{
+  "status": true,
+  "data": {
+    "items": [
+      {
+        "uuid": "uuid-sleep-001",
+        "customer_name": "ร้านทองสุขการค้า",
+        "customer_code": "CUST-010",
+        "phone": "089-123-4567",
+        "last_interaction_date": "2025-03-15T10:00:00Z",
+        "days_since_last_interaction": 446,
+        "total_visits": 8,
+        "total_projects": 2
+      }
+    ],
+    "total": 37,
+    "page": 1,
+    "size": 20,
+    "has_more": true
+  }
+}
+```
+
+**Sorted by** `days_since_last_interaction` desc (longest-sleeping first).
+
+---
+
 ## Data Models
 
 ### CustomerPurchaseTrend
@@ -694,3 +912,60 @@ Response envelope:
 | `province` | string | Province |
 | `postal_code` | string | Postal code |
 | `is_primary` | boolean | Whether this is the primary address |
+
+### CustomerProjectItem *(v1.1)*
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Project UUID |
+| `name` | string | Project name |
+| `code` | string | Project code |
+| `status` | string | Project status |
+
+### CustomerContactItem *(v1.1)*
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Contact UUID |
+| `contact_name` | string | Contact person name |
+| `phone` | string | Phone number |
+| `email` | string | Email |
+
+### CustomerVisitItem *(v1.1)*
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Visit UUID |
+| `title` | string | Visit title |
+| `description` | string | Visit description |
+| `date` | string | ISO datetime of the visit |
+
+### CustomerAnalytics *(v1.1)*
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_customers` | number | Total customer count |
+| `active_customers` | number | Customers with interaction within threshold |
+| `inactive_customers` | number | Customers beyond threshold (sleeping) |
+| `new_customers_this_month` | number | Customers created this calendar month |
+| `customers_by_province` | array | `{ province: string, count: number }[]` — top 10 |
+| `customers_by_district` | array | `{ district: string, count: number }[]` — top 5 |
+| `new_customers_over_time` | array | `{ month: "YYYY-MM", count: number }[]` — last 6 months |
+| `top_customers_by_value` | array | `{ customer: { uuid, customer_code, customer_name }, total_value: number }[]` — top 10 |
+| `customers_by_project_count` | array | `{ range: string, count: number }[]` — segmentation buckets |
+| `acquisition_trend` | array | `{ month: "YYYY-MM", cumulative: number }[]` — cumulative growth |
+
+### SleepingCustomer *(v1.1)*
+| Field | Type | Description |
+|-------|------|-------------|
+| `uuid` | string | Customer UUID |
+| `customer_name` | string | Display name |
+| `customer_code` | string | Customer code |
+| `phone` | string | Phone number |
+| `last_interaction_date` | string | ISO datetime of last interaction |
+| `days_since_last_interaction` | number | Days since last interaction |
+| `total_visits` | number | Lifetime visit count |
+| `total_projects` | number | Lifetime project count |
+
+---
+
+**API Specification Version**: 1.1
+**Last Updated**: June 11, 2026
+**Status**: Ready for Backend Implementation
+**Endpoint count**: 25 routes across 20 active sections
