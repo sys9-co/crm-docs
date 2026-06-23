@@ -114,6 +114,22 @@ Complete specification for showing both appointments and visits on the `/appoint
 
 ---
 
+## 🚚 OSR Daily Trip & Field Visit Hub — Trip Lifecycle + Per-Stop Check-in
+
+Complete specification for OSR daily field visit management:
+
+### **📡 For Backend:**
+- **[API Specification](osr-field-visit/01-API-SPEC.html)** — 10 endpoints (Trip CRUD, per-stop check-in/out, expenses), Trip + Expense entities, state machine, 27 open questions
+- **[Section Home](osr-field-visit/index.html)** — Architecture overview, blockers, status
+
+### **Key Points:**
+- 2-layer architecture: Trip daily (`started_at`/`ended_at`) + per-stop Visit (`check_in_at`/`check_out_at`)
+- Trip entity: new (backend must implement); Visit check-in/out: reuse existing fields
+- Expense capture with receipt images, 8 categories, approval workflow (schema reserved)
+- **3 Blockers:** OQ-6 (Trip-Visit binding), OQ-12 (distance calc), OQ-17 (visit_type field)
+
+---
+
 ## 📊 Current Status
 
 - **Frontend**: ✅ Complete prototype
