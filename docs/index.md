@@ -119,8 +119,11 @@ Complete specification for showing both appointments and visits on the `/appoint
 Complete specification for OSR daily field visit management:
 
 ### **📡 For Backend:**
-- **[API Specification](osr-field-visit/01-API-SPEC.html)** — 10 endpoints (Trip CRUD, per-stop check-in/out, expenses), Trip + Expense entities, state machine, 27 open questions
+- **[API Specification](osr-field-visit/01-API-SPEC.html)** — 10 endpoints (Trip CRUD, per-stop check-in/out, expenses), Trip + Expense entities, state machine, 28 open questions
 - **[Section Home](osr-field-visit/index.html)** — Architecture overview, blockers, status
+
+### **📋 UI/UX Design:**
+- **[UI Mockups](osr-field-visit/03-UI-MOCKUPS.html)** — My Day hub, Visit Card, Trip Timeline drilldown, Team Summary (manager view)
 
 ### **Key Points:**
 - 2-layer architecture: Trip daily (`started_at`/`ended_at`) + per-stop Visit (`check_in_at`/`check_out_at`)

@@ -313,6 +313,7 @@ POST body (reuse pattern อัปโหลดรูป base64 เดียว�
 - **OQ-25:** Timezone storage — backend เก็บ UTC หรือ +07:00? (ตัวอย่างใน spec ใช้ +07:00)
 - **OQ-26:** Planned vs walk-in visit — ใช้ heuristic (`created_at < route_date` = planned) หรือเพิ่ม boolean field `is_walkin`?
 - **OQ-27:** Trip cancel endpoint — `PUT /trips/{id}/cancel` ต้องมีแยกไหม? (เพื่อ OSR ป่วย/หัวหน้าสั่งกลับ) หรือใช้ PATCH status ทั่วไป?
+- **OQ-28:** Team trip list — `GET /trips?team_id=` ต้อง nested visits + owner info (owner_first_name, owner_last_name, owner_avatar_url, visit_completed_count, visit_total_count, total_distance_km, expense_total) สำหรับหัวหน้าทีมดู team summary — shape ยืนยันกับ backend
 
 ---
 
