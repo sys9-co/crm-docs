@@ -101,6 +101,27 @@ Matrix validation, Thai date formatting, calculation rules
 
 ---
 
+## 🎯 Project Sales Category Tracker — Win / Draw / Lose per Category
+
+Tab ใหม่ใน Project Detail แสดงสถานะการขายต่อ product category (Win/Draw/Lose) เทียบกับเอกสารขาย:
+
+### **📡 Critical for Backend:**
+- **[API Specification](project-sales-category-tracker/02-API.html)** — GET category-sales-summary + PUT category-lost-reasons (bulk upsert)
+- **[Database Schema](project-sales-category-tracker/03-DB.html)** — 3 history tables (ETL, read-only) + 1 new table `project_category_lost_reasons`
+
+### **📋 Reference:**
+- **[Feature Spec](project-sales-category-tracker/01-SPEC.html)** — 5 User Stories, AC, Business Logic, UI Behavior, Test Scenarios
+- **[Section Home](project-sales-category-tracker/index.html)** — Quick reference, Win/Draw/Lose logic, Phase roadmap
+
+### **Key Points:**
+- Data source: `crm.crm_project_quotation/saleorder/invoice_history` (ETL อยู่แล้ว, ห้าม ALTER)
+- Link field: `projectcode` = `crm.projects.code` (ไม่มี cross-schema JOIN)
+- Category: text 4 ระดับ `family › department › category › subcat`
+- Migration: สร้างแค่ 1 ตาราง (`project_category_lost_reasons`)
+- Credit Note: Phase 2
+
+---
+
 ## 🎯 Calendar + Visits Integration — Unified Calendar View
 
 Complete specification for showing both appointments and visits on the `/appointment` calendar page:
