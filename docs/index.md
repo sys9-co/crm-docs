@@ -101,6 +101,49 @@ Matrix validation, Thai date formatting, calculation rules
 
 ---
 
+## 🎯 CRM-728: Trip Extend Options — เลือกพาหนะ + ถ่ายไมล์มิเตอร์
+
+เพิ่ม 7 fields ใหม่ใน trips table เพื่อ audit ค่าเดินทาง — vehicle_type + odometer ตอน start/stop trip:
+
+### **📡 Critical for Backend:**
+- **[API Specification](crm-728-trip-extend/02-API-SPEC.html)** — แก้ POST /trips + PUT /trips/{id}/end + GET embed (7 fields ใหม่)
+- **[Section Home](crm-728-trip-extend/index.html)** — DB migration, key decisions, field name changes
+
+### **📋 Reference:**
+- **[BA Spec](crm-728-trip-extend/01-BA-SPEC.html)** — 3 User Stories, AC, Business Rules, VehicleType enum
+- **[UI Mockups](crm-728-trip-extend/03-UI-MOCKUPS.html)** — Start/Stop Trip Dialog ใหม่ + vehicle selector + odometer form
+
+### **Key Points:**
+- Migration: `trips` table เพิ่ม 7 columns (vehicle_type, vehicle_type_note, start_odometer, end_odometer, odometer_distance_km, photo_urls)
+- `odometer_distance_km` คำนวณ backend เท่านั้น (= end − start)
+- ⚠️ field name เปลี่ยน: `start_odometer`/`end_odometer` (ไม่ใช่ `odometer_start`/`end` ในสเปคเก่า)
+- Backward compat: trip เก่า → 7 fields = null (UI ซ่อน section ไมล์อัตโนมัติ)
+- OCR ไมล์มิเตอร์: Phase II reserved — ไม่ implement Phase I
+- Backend card: **[CRM-737]**
+
+---
+
+## 🎯 CRM-727: Trips Expense — บันทึกค่าใช้จ่ายระหว่าง Trip
+
+OSR บันทึกค่าใช้จ่าย (น้ำมัน/ทางด่วน/อาหาร/อื่นๆ) + แนบรูปใบเสร็จ ≤3 รูป ต่อ trip รายวัน:
+
+### **📡 Critical for Backend:**
+- **[API Specification](crm-727-trips-expense/02-API-SPEC.html)** — POST/PUT/DELETE /trips/{id}/expenses + embed ใน GET /trips/today + GET /trips/{id}
+- **[Section Home](crm-727-trips-expense/index.html)** — New tables, key decisions, field name changes
+
+### **📋 Reference:**
+- **[BA Spec](crm-727-trips-expense/01-BA-SPEC.html)** — 4 User Stories, AC, ExpenseType enum, E2E test outline
+- **[UI Mockups](crm-727-trips-expense/03-UI-MOCKUPS.html)** — Collapsible expense section, bottom sheet form, receipt preview
+
+### **Key Points:**
+- New tables: `trip_expenses` + `trip_expense_images` (cascade delete)
+- เพิ่ม/ลบ expense ได้เสมอ ไม่สน trip status (PO อนุมัติ)
+- ≤3 รูปใบเสร็จ + annotation ต่อ 1 expense; base64 JSON upload (ไม่ใช่ multipart)
+- ⚠️ field name: `expense_type` (ไม่ใช่ `category` ในสเปคเก่า `osr-field-visit/01-API-SPEC.md §6c`)
+- Backend card: **[CRM-736]**
+
+---
+
 ## 🎯 Project Sales Category Tracker — Win / Draw / Lose per Category
 
 Tab ใหม่ใน Project Detail แสดงสถานะการขายต่อ product category (Win/Draw/Lose) เทียบกับเอกสารขาย:
