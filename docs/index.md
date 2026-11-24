@@ -144,9 +144,9 @@ OSR บันทึกค่าใช้จ่าย (น้ำมัน/ทา�
 
 ---
 
-## 🎯 Project Sales Category Tracker — Win / Draw / Lose per Category
+## 🎯 Project Sales Category Tracker — Win / Pending / Lose per Category
 
-Tab ใหม่ใน Project Detail แสดงสถานะการขายต่อ product category (Win/Draw/Lose) เทียบกับเอกสารขาย:
+Tab ใหม่ใน Project Detail แสดงสถานะการขายต่อ product category (Win/Pending/Lose — Pending = ใบเสนอราคา/SO ยังไม่หมดอายุ) เทียบกับเอกสารขาย:
 
 ### **📡 Critical for Backend:**
 - **[API Specification](project-sales-category-tracker/02-API.html)** — GET category-sales-summary + PUT category-lost-reasons (bulk upsert)
@@ -154,7 +154,7 @@ Tab ใหม่ใน Project Detail แสดงสถานะการขา
 
 ### **📋 Reference:**
 - **[Feature Spec](project-sales-category-tracker/01-SPEC.html)** — 5 User Stories, AC, Business Logic, UI Behavior, Test Scenarios
-- **[Section Home](project-sales-category-tracker/index.html)** — Quick reference, Win/Draw/Lose logic, Phase roadmap
+- **[Section Home](project-sales-category-tracker/index.html)** — Quick reference, Win/Pending/Lose logic, Phase roadmap
 
 ### **Key Points:**
 - Data source: `crm.crm_project_quotation/saleorder/invoice_history` (ETL อยู่แล้ว, ห้าม ALTER)

@@ -5,7 +5,7 @@ title: Project Sales Category Tracker
 
 # Project Sales Category Tracker
 
-📊 **Tab ใหม่ใน Project Detail — แสดงสถานะ Win / Draw / Lose ต่อ product category เทียบกับเอกสารขาย**
+📊 **Tab ใหม่ใน Project Detail — แสดงสถานะ Win / Pending / Lose ต่อ product category เทียบกับเอกสารขาย**
 
 ## 🚀 Critical for Backend Implementation
 
@@ -49,13 +49,17 @@ family → department → category → subcat
 
 ---
 
-## 🎯 Win / Draw / Lose Logic
+## 🎯 Win / Pending / Lose Logic (v1.1 — CRM-1748)
 
 | Status | เงื่อนไข |
 |--------|---------|
-| 🟢 **Win** | `invoice_amount > 0` (มีบิลขายแล้ว) |
-| 🔵 **Draw** | `so_amount > 0` AND `invoice_amount = 0` (มี SO แต่ยังไม่บิล) |
-| 🔴 **Lose** | `quotation_amount > 0` AND `so_amount = 0` (มีใบเสนอแต่ไม่ได้ SO) |
+| 🟢 **Win** | มี invoice (`invoice_amount > 0`) |
+| 🔵 **Pending (รอการตัดสินใจ)** | ไม่มี invoice แต่มีใบเสนอราคาหรือ SO ที่ยังไม่หมดอายุ (`is_expired = false`) |
+| 🔴 **Lose** | หมดอายุแล้วไม่มี invoice หรือไม่มี QT/SO เลย |
+
+> เดิมมีสถานะ Draw (มี SO ไม่มีบิล) — ยกเลิกแล้ว รวมเข้า Pending; `summary.draw_count` ยังส่งมาเป็น 0 เสมอ (backward compat)
+> `expire_date = GREATEST(quotation.expiredate, saleorder.deliverydate)` ต่อหมวด · `is_expired = expire_date < วันนี้` · หมวดที่มีทั้งเอกสารหมดอายุและไม่หมดอายุ = Pending
+> ช่องเหตุผลที่แพ้ แก้ไขได้เฉพาะสถานะ Lose
 
 > **iscancel filter:** `WHERE iscancel = 0 OR iscancel IS NULL`  
 > **CAST:** `amount` ใน quotation/saleorder เป็น type `money` → ต้อง `CAST(amount AS numeric)` ก่อน SUM
@@ -65,7 +69,7 @@ family → department → category → subcat
 ## 🔗 API Endpoints
 
 ```
-GET  /crm/v2/projects/{id}/category-sales-summary    -- Matrix Win/Draw/Lose ทุก category
+GET  /crm/v2/projects/{id}/category-sales-summary    -- Matrix Win/Pending/Lose ทุก category (+ expire_date, is_expired, pending_count)
 PUT  /crm/v2/projects/{id}/category-lost-reasons     -- บันทึก lost reason (bulk upsert)
 ```
 
